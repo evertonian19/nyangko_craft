@@ -184,6 +184,11 @@ const CATS = [
   { k: 7, name: '치타', role: '돌진', cost: 250, hp: 150, atk: 14, cd: 26, rng: 30, spd: 4.2, w: 70, h: 44, sc: 1.2, top: 24, unlock: 4, firstMul: 1.8, ghost: 1, fx: 'dash', aiW: 1.8 },
   { k: 8, name: '표범', role: '보스', cost: 420, hp: 900, atk: 38, cd: 60, rng: 60, spd: 1.3, w: 96, h: 78, sc: 1.8, top: 28, unlock: 4, dr: 0.85, area: 1, big: 1, roar: 1, glow: '#ff5a4b', aura: { c: '#ff3b3b', p: 0.1 }, aiW: 1.5 },
 ];
+const ATK_T = 18;   // 공격 모션 길이(프레임)
+const SKILL = ['냥냥 연타', '그림자 습격', '화살비', '방패 강타', '연쇄 번개', '성검 낙뢰', '피의 광란', '섬광 돌진', '흑염 대참격'];
+const SKILL_COL = ['#ffb347', '#b58bff', '#9be37a', '#ffd84a', '#c9a5ff', '#fff3a0', '#ff5a4b', '#ffe27a', '#ff3b3b'];
+const SKILL_P = [0, 0.05, 0.10, 0.15, 0.20];   // 본진 해금 레벨별 패시브 스킬 확률
+CATS.forEach((D) => { D.skill = SKILL[D.k]; D.sp = SKILL_P[D.unlock]; });
 const STAGES = [
   { name: '골목 입구', inc: 0.65, gold: 40, lv: 1, bt: 1.6, eager: 0.15 },
   { name: '쓰레기통 앞', inc: 0.75, gold: 50, lv: 1, bt: 1.4, eager: 0.2 },
@@ -286,11 +291,16 @@ const FURS = [   // 직업별 털색 3종 (소환 때 무작위): [기본, 배/�
   [['#e9b24c', '#fff0c8', '#2a1608', '#e9b24c'], ['#d8dcea', '#f6f8ff', '#3c4260', '#d8dcea'], ['#3a3446', '#6e6488', '#14101c', '#3a3446']],
 ].map((list) => list.map(mkFur));
 const furOf = (k, v) => FURS[k][(v || 0) % 3];
+const EYE = [   // 홍채: [위(진함), 중간, 아래(밝음)]
+  ['#8a4a10', '#e8941a', '#ffd86a'], ['#8a6a00', '#f2d02a', '#fff59a'], ['#2c6a3a', '#5cbf5a', '#c8f09a'],
+  ['#2c4a78', '#5b8fd0', '#bfe0ff'], ['#6a3fc0', '#c9a5ff', '#fff6a0'], ['#7a3a08', '#e07a14', '#ffcf4a'],
+  ['#7a6a10', '#e6d34a', '#fffbb0'], ['#8a5a00', '#f2b134', '#ffe58a'], ['#8a0f0f', '#ff3a2a', '#ffb08a'],
+];
 const GLOW = ['#ffffff', '#fff3a0', '#c8f09a', '#bfe0ff', '#c9a5ff', '#ffcf4a', '#fff3a0', '#ffd86a', '#ff5a4b'];   // 눈 발광색
 const SLEEVE = [null, '#3a3248', '#58a865', '#b4bccf', '#7a52c9', '#e0b13a', null, null, null];
-const TORSO = [{ rx: 9 }, { rx: 8 }, { rx: 8.5 }, { rx: 10.5 }, { rx: 9.5 }, { rx: 11 }, { rx: 9.5 }, { rx: 8 }, { rx: 12 }];
+const TORSO = [{ rx: 9.5 }, { rx: 8.5 }, { rx: 9 }, { rx: 11 }, { rx: 10 }, { rx: 11.5 }, { rx: 10 }, { rx: 8.5 }, { rx: 12.5 }];
 const TAILC = [{ n: 8, len: 22, curl: 1.15 }, { n: 8, len: 22, curl: 1.1 }, { n: 8, len: 22, curl: 1.15 }, { n: 8, len: 22, curl: 1.1 }, { n: 8, len: 24, curl: 1.0 }, { n: 8, len: 24, curl: 1.2 }, { n: 4, len: 9, curl: 0.5 }, { n: 9, len: 32, curl: 0.55 }, { n: 9, len: 29, curl: 0.9 }];
-const TOP = [41, 43, 45, 45, 63, 49, 45, 41, 42];   // 체력바/아이콘 위치용: 발 위로 그려지는 높이
+const TOP = [42, 44, 46, 46, 60, 50, 46, 42, 43];   // 체력바/아이콘 위치용: 발 위로 그려지는 높이
 CATS.forEach((D) => { D.top = TOP[D.k]; });
 const GOLD = '#e0b13a', PINK = '#ff9bb3';
 const LOD = { on: false };   // 고양이가 많을 때는 음영(클립)을 생략해 프레임을 지킨다
@@ -317,7 +327,7 @@ function catState(g) {
   return { team: g.team, coat: g.coat || 0, mood, t: g.anim, moving: g.moving, atkP: g.atk > 0 ? 1 - g.atk / 14 : 0, tw: fr * 0.08 + g.anim, blink: mood === 0 && Math.floor(fr / 8 + g.anim * 5) % 26 === 0 ? 1 : 0 };
 }
 const swOf = (s) => Math.sin(s.atkP * Math.PI);
-function withLean(s, f) { c.save(); const a = (s.moving ? 0.07 : 0) + swOf(s) * 0.14; if (a) { c.translate(0, 6); c.rotate(a); c.translate(0, -6); } f(); c.restore(); }
+function withLean(s, f) { c.save(); const a = (s.moving ? 0.07 : 0) + swOf(s) * 0.14; if (a) { c.translate(0, 14); c.rotate(a); c.translate(0, -14); } f(); c.restore(); }
 // 2마디 IK
 function ik(x0, y0, x1, y1, l1, l2, bend) {
   let dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy) || 0.01; const ux = dx / d, uy = dy / d, m = l1 + l2 - 0.05;
@@ -330,7 +340,7 @@ function limb(x0, y0, x1, y1, w0, w1, col, ol) { const dx = x1 - x0, dy = y1 - y
 // 꼬리: 마디가 위상 tw 로 물결 치며 끝으로 갈수록 가늘어진다. 아래로 늘어졌다가 끝이 위로 말린다.
 function pTail(k, s) {
   const F = furOf(k, s.coat), T = TORSO[k], TC = TAILC[k], ph = s.tw, mv = s.moving ? 1 : 0;
-  const L = [], R = [], seg = TC.len / TC.n; let x = -T.rx * 0.7, y = 7; const pts = [[x, y, 0]];
+  const L = [], R = [], seg = TC.len * 0.85 / TC.n; let x = -T.rx * 0.8, y = 12; const pts = [[x, y, 0]];
   for (let i = 1; i <= TC.n; i++) {
     const f = i / TC.n, ang = Math.PI - 0.5 + TC.curl * f * (mv ? 0.8 : 1) * 1.05 + Math.sin(ph - i * 0.75) * 0.34 * f;
     x += Math.cos(ang) * seg; y += Math.sin(ang) * seg; pts.push([x, y, f]);
@@ -344,109 +354,114 @@ function pTail(k, s) {
   const [ex, ey] = pts[pts.length - 1]; circ(ex, ey, 2.1); c.fillStyle = k === 1 ? F.b : F.s; c.fill();
 }
 function pCape(k, s) {
+  c.save(); c.translate(1, 12); c.scale(0.85, 0.85);
   const TM = TEAM[s.team], fl = Math.sin(s.tw * 1.1) * 2.5 + (s.moving ? 3 : 0);
   c.beginPath(); c.moveTo(1, -13); c.quadraticCurveTo(-8, -16 + fl, -26, -4 + fl * 2); c.quadraticCurveTo(-24, 10, -12, 16); c.quadraticCurveTo(-4, 9, -1, 6); c.closePath(); shade(TM.main, -14, 16, 1.1, TM.dark);
   pline(-3, -8, -18, -2 + fl * 1.5, mix(TM.main, '#ffffff', 0.4)); pline(-3, -1, -16, 8 + fl * 0.5, mix(TM.main, '#ffffff', 0.4)); pline(-24, -2 + fl * 2, -20, 10, GOLD, 1.4);
+  c.restore();
 }
-// 다리: 고양이 역관절 — 엉덩이 → 앞으로 꺾인 무릎 → 뒤로 빠진 발목 → 길게 뻗은 발. 걷기는 두 다리가 엇갈린다.
+// 다리: 통통하고 짧은 SD 다리. 걸을 때 엇갈려 움직이고 발을 든다.
 function pLegs(k, s, far) {
-  const F = furOf(k, s.coat), mv = s.moving ? 1 : 0, ph = s.t * 0.9, hx = far ? -3 : 3, phase = far ? Math.PI : 0, hy = 6;
-  const sw = Math.sin(ph + phase), lift = Math.max(0, Math.cos(ph + phase)) * 4.2 * mv;
-  const ax = hx + sw * 6 * mv - 1.5, ay = FOOT - 5 - lift, tx = ax + 6, ty = FOOT - 1.6 - lift;
-  const [kx, ky, ex, ey] = ik(hx, hy, ax, ay, 8.2, 8.2, -1), col = far ? F.sh : F.m, ol = far ? mix(F.o, DK, 0.3) : F.o;
-  limb(hx, hy, kx, ky, 4, 3.1, col, ol); limb(kx, ky, ex, ey, 3.1, 2.1, col, ol);
-  if (!far) { circ(hx, hy, 4.4); c.fillStyle = col; c.fill(); pline(hx + 1.4, hy + 1, kx + 1.4, ky, F.hi, 1); }
-  limb(ex, ey, tx - 2.5, ty - 1.2, 2.1, 2.5, col, ol);
-  ell(tx, ty, 4.6, 2.5); c.fillStyle = far ? mix(F.sock, DK, 0.2) : F.sock; c.fill(); c.lineWidth = 1; c.strokeStyle = ol; c.stroke();
-  pline(tx + 1.4, ty - 1.2, tx + 1.8, ty + 1.2, ol, 0.8); pline(tx + 3.2, ty - 1, tx + 3.4, ty + 0.8, ol, 0.8);
-  if (!far) px(tx - 1.4, ty + 1.2, '#ff9bb3');
+  const F = furOf(k, s.coat), mv = s.moving ? 1 : 0, ph = s.t * 0.9, hx = far ? -4 : 4, phase = far ? Math.PI : 0;
+  const sw = Math.sin(ph + phase), lift = Math.max(0, Math.cos(ph + phase)) * 3.4 * mv, fx_ = hx + sw * 4.5 * mv, fy = FOOT - 2.6 - lift;
+  const col = far ? F.sh : F.m, ol = far ? mix(F.o, DK, 0.3) : F.o;
+  limb(hx, 13, fx_, fy, 3.9, 3.3, col, ol);
+  ell(fx_ + 1.8, fy + 0.8, 4.9, 2.9); c.fillStyle = k === 3 ? '#cfd6e4' : (far ? mix(F.sock, DK, 0.2) : F.sock); c.fill(); c.lineWidth = 1.1; c.strokeStyle = ol; c.stroke();
+  pline(fx_ + 3.6, fy - 0.2, fx_ + 3.8, fy + 2, ol, 0.8); pline(fx_ + 5.2, fy + 0.2, fx_ + 5.2, fy + 1.8, ol, 0.8);
+  if (!far) px(fx_ - 0.6, fy + 1.6, '#ff9bb3');
 }
-// 팔: 어깨 → 팔꿈치(아래로) → 손. 무기는 앞손에 쥔다.
+const swingE = (p) => (p < 0.22 ? -0.2 * (p / 0.22) : p < 0.45 ? -0.2 + 1.2 * ((p - 0.22) / 0.23) : 1 - 0.15 * ((p - 0.45) / 0.55));
+const SWR = [16, 22, 0, 32, 0, 50, 16, 16, 18];   // 휘두름 궤적 반지름(원거리는 0)
+// 팔: 짧은 두 마디. 공격 때는 머리 뒤에서 바닥 앞까지 크게 휘두른다.
 function armPose(k, s, front) {
-  const sx = front ? 3 : -1, sy = -11, mv = s.moving ? 1 : 0, ph = s.t * 0.9, sw = swOf(s);
-  let hx, hy, ang = -1.0;
+  const sx = front ? 6 : -4, sy = 4, mv = s.moving ? 1 : 0, ph = s.t * 0.9, sw = swOf(s);
+  let hx, hy, ang = -1.1;
   if (front) {
-    if (k === 2) { hx = sx + 11; hy = -8; }
-    else if (k === 4) { hx = sx + 9; hy = -3; }
-    else if (s.atkP > 0) { const th = -1.9 + s.atkP * 2.6; hx = sx + Math.cos(th) * 12.5; hy = sy + Math.sin(th) * 12.5; ang = th - 0.1; }
-    else { hx = sx + 8 + Math.sin(ph + Math.PI) * 2.5 * mv; hy = -3 - Math.max(0, Math.cos(ph)) * 1.5 * mv; ang = -1.0; }
-  } else if (k === 2) { hx = sx + 10 - sw * 9.5; hy = -8; }
-  else if (k === 3) { hx = sx + 10; hy = -3; }
-  else if (k === 4) { hx = sx + 6; hy = -4; }
-  else { hx = sx + 4 + Math.sin(ph) * 3.5 * mv; hy = -1 - Math.max(0, Math.cos(ph + Math.PI)) * mv; }
+    if (k === 2) { hx = sx + 8; hy = 3; }
+    else if (k === 4) { hx = sx + 6; hy = 7; }
+    else if (s.atkP > 0) { const th = -2.4 + 3.4 * swingE(s.atkP); hx = sx + Math.cos(th) * 10; hy = sy + Math.sin(th) * 10; ang = th - 0.15; }
+    else { hx = sx + 6 + Math.sin(ph + Math.PI) * 2 * mv; hy = 9 - Math.max(0, Math.cos(ph)) * 1.5 * mv; }
+  } else if (k === 2) { hx = sx + 8 - sw * 9.5; hy = 3; }
+  else if (k === 3) { hx = sx + 8; hy = 8; }
+  else if (k === 4) { hx = sx + 6; hy = 8; }
+  else { hx = sx + 3 + Math.sin(ph) * 3 * mv; hy = 10 - Math.max(0, Math.cos(ph + Math.PI)) * mv; }
   return { sx, sy, hx, hy, ang, sw };
 }
 function drawArm(k, s, front) {
-  const F = furOf(k, s.coat), P = armPose(k, s, front), sl = SLEEVE[k] || F.m, ol = SLEEVE[k] ? mix(sl, DK, 0.6) : F.o, col = front ? sl : mix(sl, DK, 0.2);
-  const [ex, ey, hx, hy] = ik(P.sx, P.sy, P.hx, P.hy, 6.8, 6.8, 1);
-  limb(P.sx, P.sy, ex, ey, 3.3, 2.7, col, ol); limb(ex, ey, hx, hy, 2.7, 2.1, SLEEVE[k] && k !== 4 && k !== 3 ? col : (front ? F.m : F.sh), SLEEVE[k] && k !== 4 && k !== 3 ? ol : F.o);
-  circ(hx, hy, 2.9); c.fillStyle = front ? F.sock : mix(F.sock, DK, 0.15); c.fill(); c.lineWidth = 1; c.strokeStyle = F.o; c.stroke();
-  if (front && k >= 5 && P.sw > 0.15 && ![5].includes(k)) for (const q of [-1.6, 0, 1.6]) { c.beginPath(); c.moveTo(hx + 1.4, hy + q); c.lineTo(hx + 6.4, hy + q * 1.5 - 0.6); c.lineTo(hx + 1.4, hy + q + 1); c.closePath(); c.fillStyle = '#ffffff'; c.fill(); }
-  if (front && k === 0 && P.sw > 0.15) for (const q of [-1.6, 0, 1.6]) { c.beginPath(); c.moveTo(hx + 1.4, hy + q); c.lineTo(hx + 5.6, hy + q * 1.5 - 0.5); c.lineTo(hx + 1.4, hy + q + 1); c.closePath(); c.fillStyle = '#ffffff'; c.fill(); }
+  const F = furOf(k, s.coat), P = armPose(k, s, front), slv = SLEEVE[k], col0 = slv || F.m, ol = slv ? mix(slv, DK, 0.6) : F.o, col = front ? col0 : mix(col0, DK, 0.22);
+  const [ex, ey, hx, hy] = ik(P.sx, P.sy, P.hx, P.hy, 5, 5, 1);
+  limb(P.sx, P.sy, ex, ey, 3.4, 2.8, col, ol); limb(ex, ey, hx, hy, 2.8, 2.3, col, ol);
+  circ(hx, hy, 3.2); c.fillStyle = front ? F.sock : mix(F.sock, DK, 0.15); c.fill(); c.lineWidth = 1.1; c.strokeStyle = F.o; c.stroke();
+  if (front && [0, 6, 7, 8].includes(k) && P.sw > 0.15) for (const q of [-1.8, 0, 1.8]) { c.beginPath(); c.moveTo(hx + 1.6, hy + q); c.lineTo(hx + 7.4, hy + q * 1.6 - 0.8); c.lineTo(hx + 1.6, hy + q + 1.2); c.closePath(); c.fillStyle = '#ffffff'; c.fill(); c.lineWidth = 0.6; c.strokeStyle = F.o; c.stroke(); }
 }
 function pArmB(k, s) { withLean(s, () => drawArm(k, s, false)); }
 function pArmF(k, s) {
   withLean(s, () => {
-    if (k === 3) { const P = armPose(k, s, false); circ(P.hx + 2.5, P.hy + 1, 8.4); shade(TEAM[s.team].main, -8, 10, 1.1, TEAM[s.team].dark); circ(P.hx + 2.5, P.hy + 1, 8.4); c.lineWidth = 1.2; c.strokeStyle = '#e4e9f3'; c.stroke(); circ(P.hx + 2.5, P.hy + 1, 3.2); c.fillStyle = '#fff6e0'; c.fill(); c.lineWidth = 0.8; c.strokeStyle = TEAM[s.team].dark; c.stroke(); }
+    if (k === 3) { const P = armPose(k, s, false); circ(P.hx + 2.5, P.hy + 1, 8.4); shade(TEAM[s.team].main, 0, 17, 1.2, TEAM[s.team].dark); circ(P.hx + 2.5, P.hy + 1, 8.4); c.lineWidth = 1.4; c.strokeStyle = '#e4e9f3'; c.stroke(); circ(P.hx + 2.5, P.hy + 1, 3.2); c.fillStyle = '#fff6e0'; c.fill(); c.lineWidth = 0.8; c.strokeStyle = TEAM[s.team].dark; c.stroke(); }
     drawArm(k, s, true);
   });
 }
 function pBody(k, s) {
   withLean(s, () => {
     const F = furOf(k, s.coat), T = TORSO[k], TM = TEAM[s.team], fl = Math.sin(s.tw * 1.1) * 2.5 + (s.moving ? 2.5 : 0), rx = T.rx;
-    const tp = () => { c.beginPath(); c.ellipse(0.5, -3, rx, 13, 0.05, 0, TAU); };
-    ell(0, 6, rx * 0.95, 5.6); shade(F.m, 0, 12, 1.1, F.o);
-    tp(); shade(F.m, -16, 10, 1.2, F.o);
+    const tp = () => { c.beginPath(); c.ellipse(0, 8, rx, 8.6, 0, 0, TAU); };
+    tp(); shade(F.m, -0.6, 16.6, 1.3, F.o);
     c.save(); tp(); c.clip();
-    c.fillStyle = F.b; ell(3.2, -1, rx * 0.6, 10.5); c.fill();
-    if (k === 6) for (const x of [-7, -3, 1, 5]) { c.beginPath(); c.moveTo(x - 1, -16); c.quadraticCurveTo(x + 2.4, -8, x + 0.4, 0); c.quadraticCurveTo(x - 0.6, -8, x - 1, -16); c.fillStyle = F.s; c.fill(); }
-    if (k === 7) for (const [x, y] of [[-6, -10], [-1, -12], [4, -9], [-7, -2], [-2, -5], [3, -2], [-4, 5], [2, 4]]) { c.fillStyle = F.s; c.fillRect(x - 1, y - 1, 2.4, 2.4); }
-    if (k === 8) for (const [x, y, r] of [[-7, -9, 2.4], [-1, -11, 2.6], [5, -8, 2.3], [-6, -1, 2.4], [0, -3, 2.5], [6, 0, 2.2], [-3, 6, 2.2], [3, 6, 2]]) rose(x, y, r);
+    c.fillStyle = F.b; ell(3, 10, rx * 0.62, 6); c.fill();
+    if (k === 6) for (const x of [-6, -2, 2, 6]) { c.beginPath(); c.moveTo(x - 1, -1); c.quadraticCurveTo(x + 2.4, 5, x + 0.4, 11); c.quadraticCurveTo(x - 0.6, 5, x - 1, -1); c.fillStyle = F.s; c.fill(); }
+    if (k === 7) for (const [x, y] of [[-6, 2], [-1, 0], [4, 3], [-7, 9], [-2, 7], [3, 11], [-4, 14], [2, 14]]) { c.fillStyle = F.s; c.fillRect(x - 1, y - 1, 2.4, 2.4); }
+    if (k === 8) for (const [x, y, r] of [[-7, 3, 2.4], [-1, 1, 2.6], [5, 3, 2.3], [-6, 10, 2.4], [0, 8, 2.5], [6, 11, 2.2], [-3, 15, 2.2], [3, 15, 2]]) rose(x, y, r);
     c.restore();
-    if (k === 0) { ell(2.6, -13, 5.4, 3.2); shade(TM.main, -16, -10, 1, TM.dark); circ(4.6, -9.4, 2.2); c.fillStyle = '#ffd84a'; c.fill(); c.lineWidth = 0.8; c.strokeStyle = '#8a6a00'; c.stroke(); px(4.4, -9.4, '#8a6a00'); }
+    if (k === 0) { ell(3.5, 1.4, 5.4, 2.8); shade(TM.main, -1.4, 4.2, 1, TM.dark); circ(5.6, 5, 2.3); c.fillStyle = '#ffd84a'; c.fill(); c.lineWidth = 0.8; c.strokeStyle = '#8a6a00'; c.stroke(); px(5.4, 5, '#8a6a00'); }
     if (k === 1) {
-      rr(-rx + 0.4, -3, rx * 2 - 0.8, 13, 4); shade('#3a3248', -3, 10, 1, DK); rr(-rx + 0.4, 3, rx * 2 - 0.8, 3, 1); shade('#8a5a33', 3, 6, 0.8, '#2a140c');
-      c.beginPath(); c.moveTo(4, -14); c.quadraticCurveTo(-4, -18 + fl, -19, -12 + fl * 1.4); c.lineTo(-20, -7 + fl * 1.4); c.quadraticCurveTo(-4, -9, 4, -9); c.closePath(); shade(TM.main, -18, -7, 1, TM.dark); pline(3, -12, -13, -10 + fl * 1.2, mix(TM.main, '#ffffff', 0.5));
+      rr(-rx + 0.4, 5, rx * 2 - 0.8, 11, 4); shade('#3a3248', 5, 16, 1, DK); rr(-rx + 0.4, 9, rx * 2 - 0.8, 2.6, 1); shade('#8a5a33', 9, 11.6, 0.8, '#2a140c');
+      c.beginPath(); c.moveTo(5, 0); c.quadraticCurveTo(-3, -3 + fl, -18, 3 + fl * 1.4); c.lineTo(-19, 8 + fl * 1.4); c.quadraticCurveTo(-3, 6, 5, 5); c.closePath(); shade(TM.main, -3, 8, 1, TM.dark); pline(4, 2, -12, 4 + fl * 1.2, mix(TM.main, '#ffffff', 0.5));
     }
     if (k === 2) {
-      rr(-rx + 0.3, -11, rx * 2 - 0.6, 19, 5); shade('#58a865', -11, 8, 1, '#1f4a2a'); rr(-rx + 0.3, 3, rx * 2 - 0.6, 2.8, 1); shade('#8a5a33', 3, 6, 0.8, '#2a140c');
-      c.save(); c.translate(-7, -10); c.rotate(-0.4); rr(-3, -8, 6, 16, 2); shade('#8a5a33', -8, 8, 1, '#3a2414'); for (const dx of [-1.6, 0.2, 2]) { pline(dx - 0.6, -8, dx - 1.2, -13, '#e9eefb'); pline(dx - 1.2, -13, dx - 1.2, -15, '#ff6a4d', 1.4); } c.restore();
+      rr(-rx + 0.3, 3, rx * 2 - 0.6, 13, 5); shade('#58a865', 3, 16, 1, '#1f4a2a'); rr(-rx + 0.3, 10, rx * 2 - 0.6, 2.6, 1); shade('#8a5a33', 10, 12.6, 0.8, '#2a140c');
+      c.save(); c.translate(-7, 4); c.rotate(-0.4); rr(-3, -8, 6, 16, 2); shade('#8a5a33', -8, 8, 1, '#3a2414'); for (const dx of [-1.6, 0.2, 2]) { pline(dx - 0.6, -8, dx - 1.2, -13, '#e9eefb'); pline(dx - 1.2, -13, dx - 1.2, -15, '#ff6a4d', 1.4); } c.restore();
     }
     if (k === 3) {
-      rr(-rx, -14, rx * 2, 17, 5); shade('#cfd6e4', -14, 3, 1.1, '#5d6482'); rr(-2.6, -14, 5.2, 22, 2); shade(TM.main, -14, 8, 1, TM.dark); rr(-rx, 3, rx * 2, 3, 1); shade('#7b3f2a', 3, 6, 0.8, '#2a140c');
-      pline(-6, -11, -3, -6, '#ffffff'); circ(1, -12, 4.7); shade('#cfd6e4', -17, -7, 1, '#5d6482');
+      rr(-rx, 1.5, rx * 2, 14, 5); shade('#cfd6e4', 1.5, 15.5, 1.1, '#5d6482'); rr(-2.6, 1.5, 5.2, 15, 2); shade(TM.main, 1.5, 16.5, 1, TM.dark); rr(-rx, 11, rx * 2, 3, 1); shade('#7b3f2a', 11, 14, 0.8, '#2a140c');
+      pline(-6, 4, -3, 8, '#ffffff'); circ(3, 2.4, 4.3); shade('#cfd6e4', -2, 7, 1, '#5d6482');
     }
     if (k === 4) {
-      c.beginPath(); c.moveTo(-rx, -13); c.quadraticCurveTo(0.5, -17, rx + 1, -12); c.lineTo(rx + 3, 10); c.quadraticCurveTo(0, 14, -rx - 3, 10); c.closePath(); shade('#7a52c9', -15, 14, 1.1, '#2e1c5a');
-      pline(-rx - 3, 10, -4, 12.4, '#ffd84a', 1.4); pline(-4, 12.4, rx + 3, 10, '#ffd84a', 1.4); star5(-2, -4, 2.6); star5(5, 3, 2.1); star5(-6, 4, 1.7);
+      c.beginPath(); c.moveTo(-rx, 1.4); c.quadraticCurveTo(0.5, -2, rx + 1, 2); c.lineTo(rx + 3, 16); c.quadraticCurveTo(0, 19.4, -rx - 3, 16); c.closePath(); shade('#7a52c9', -2, 19, 1.1, '#2e1c5a');
+      pline(-rx - 3, 16, -4, 18.2, '#ffd84a', 1.4); pline(-4, 18.2, rx + 3, 16, '#ffd84a', 1.4); star5(-2, 6, 2.6); star5(5, 11, 2.1); star5(-6, 12, 1.7);
     }
     if (k === 5) {
-      rr(-rx, -14, rx * 2, 17, 5); shade(GOLD, -14, 3, 1.1, '#6a4a10'); circ(2, -6, 2.6); c.fillStyle = TM.main; c.fill(); c.lineWidth = 0.9; c.strokeStyle = TM.dark; c.stroke(); pline(-7, -11, 8, -11, '#fff3c0');
-      rr(-rx, 3, rx * 2, 3, 1); shade('#b8891f', 3, 6, 0.8, '#6a4a10'); circ(1, -12, 5); shade(GOLD, -17, -7, 1, '#6a4a10');
+      rr(-rx, 1.5, rx * 2, 14, 5); shade(GOLD, 1.5, 15.5, 1.1, '#6a4a10'); circ(2, 7, 2.6); c.fillStyle = TM.main; c.fill(); c.lineWidth = 0.9; c.strokeStyle = TM.dark; c.stroke(); pline(-7, 4, 8, 4, '#fff3c0');
+      rr(-rx, 11, rx * 2, 3, 1); shade('#b8891f', 11, 14, 0.8, '#6a4a10'); circ(3, 2.4, 4.6); shade(GOLD, -2, 7, 1, '#6a4a10');
     }
-    if (k >= 6 && k !== 8) { ell(2.6, -13, 5.2, 3); shade(TM.main, -16, -10, 1, TM.dark); }
+    if (k >= 6 && k !== 8) { ell(3.5, 1.2, 5.2, 2.7); shade(TM.main, -1.4, 4, 1, TM.dark); }
     if (k === 8) {
-      ell(2.6, -13, 5.8, 3.4); shade(GOLD, -16, -10, 1, '#6a4a10'); for (const x of [-1, 3, 7]) { tri(x - 1.4, -15, x, -19, x + 1.4, -15); c.fillStyle = '#ffd84a'; c.fill(); c.lineWidth = 0.7; c.strokeStyle = '#6a4a10'; c.stroke(); }
-      circ(3, -10.4, 1.8); c.fillStyle = TM.main; c.fill();
+      ell(3.5, 1.4, 5.8, 3); shade(GOLD, -1.6, 4.4, 1, '#6a4a10'); for (const x of [0, 4, 8]) { tri(x - 1.4, 0, x, -4, x + 1.4, 0); c.fillStyle = '#ffd84a'; c.fill(); c.lineWidth = 0.7; c.strokeStyle = '#6a4a10'; c.stroke(); }
+      circ(4, 4.4, 1.8); c.fillStyle = TM.main; c.fill();
     }
   });
 }
-// 블랙팬서 눈: 동공 없는 흰 각진 쐐기. 바깥(관자놀이)이 높고 코 쪽이 낮게 치켜 올라간다. 은은한 발광 + 짙은 아이마스크 + 은빛 눈썹선.
-const WEYE = [[-5, -2.4], [-0.5, -1.9], [5.2, 1.0], [5.4, 2.2], [0.5, 1.3], [-3.6, -0.3]];
-function wakEye(x, y, sc, k, m, blink) {
-  const G_ = GLOW[k], sy = m === 3 ? 0.72 : 1, P = (f) => WEYE.map(([a, b]) => [x + a * sc * f, y + b * sc * sy * f]);
-  if (m === 2) { pline(x - 3, y - 3, x + 3, y + 3, '#14101c', 1.5); pline(x + 3, y - 3, x - 3, y + 3, '#14101c', 1.5); return; }
-  if (m === 1) { pline(x - 4 * sc, y - 3 * sc, x + 3 * sc, y, '#14101c', 1.6); pline(x + 3 * sc, y, x - 4 * sc, y + 3.2 * sc, '#14101c', 1.6); return; }
-  pth(P(1.75)); c.fillStyle = 'rgba(12,8,20,.5)'; c.fill();
-  if (blink) { pline(x - 5 * sc, y - 2 * sc, x + 5.4 * sc, y + 2 * sc, '#14101c', 1.6); return; }
-  c.globalAlpha = m === 3 ? 0.5 : 0.3; pth(P(1.9)); c.fillStyle = G_; c.fill(); c.globalAlpha = m === 3 ? 0.75 : 0.5; pth(P(1.4)); c.fill(); c.globalAlpha = 1;
-  pth(P(1)); const gr = c.createLinearGradient(x - 5 * sc, y - 2 * sc, x + 5 * sc, y + 2 * sc); gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, mix('#ffffff', G_, 0.4)); c.fillStyle = gr; c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#0e0814'; c.lineJoin = 'round'; c.stroke();
-  c.beginPath(); c.moveTo(x - 6.4 * sc, y - 3.4 * sc * sy); c.lineTo(x + 0.4 * sc, y - 3.4 * sc * sy); c.lineTo(x + 6.6 * sc, y + 0.4 * sc); c.lineWidth = 0.9; c.strokeStyle = '#d6deff'; c.stroke();
+// 귀여운 큰 눈: 흰자 + 3톤 홍채 + 세로 슬릿 동공 + 큰/작은 하이라이트 + 굵은 윗속눈썹. 공격 때는 결연하게 반쯤 감김.
+function sdEye(x, y, rx, ry, k, m, blink) {
+  const E = EYE[k], D = '#14101c', sq = m === 3 ? 0.72 : 1;
+  if (m === 2) { pline(x - rx * 0.8, y - ry * 0.6, x + rx * 0.8, y + ry * 0.6, D, 1.5); pline(x + rx * 0.8, y - ry * 0.6, x - rx * 0.8, y + ry * 0.6, D, 1.5); return; }
+  if (m === 1) { pline(x - rx * 0.9, y - ry * 0.7, x + rx * 0.5, y, D, 1.7); pline(x + rx * 0.5, y, x - rx * 0.9, y + ry * 0.7, D, 1.7); return; }
+  if (blink) { c.beginPath(); c.arc(x, y + ry * 0.35, rx * 0.95, Math.PI * 1.1, Math.PI * 1.9); c.lineWidth = 1.7; c.strokeStyle = D; c.lineCap = 'round'; c.stroke(); return; }
+  c.save(); ell(x, y, rx, ry * sq); c.fillStyle = '#fffdf6'; c.fill(); c.clip();
+  const gr = c.createLinearGradient(x, y - ry, x, y + ry); gr.addColorStop(0, E[0]); gr.addColorStop(0.5, E[1]); gr.addColorStop(1, E[2]);
+  ell(x + rx * 0.12, y + ry * 0.05, rx * 0.84, ry * 0.98 * sq); c.fillStyle = gr; c.fill();
+  ell(x + rx * 0.16, y + ry * 0.04, rx * 0.3, ry * 0.74 * sq); c.fillStyle = '#120a1a'; c.fill();
+  circ(x - rx * 0.28, y - ry * 0.36 * sq, rx * 0.34); c.fillStyle = '#ffffff'; c.fill(); circ(x + rx * 0.4, y + ry * 0.42 * sq, rx * 0.16); c.fill();
+  if (m === 3) { c.beginPath(); c.moveTo(x - rx - 1, y - ry - 1); c.lineTo(x + rx + 1, y - ry - 1); c.lineTo(x + rx + 1, y - ry * 0.1); c.lineTo(x - rx - 1, y - ry * 0.75); c.closePath(); c.fillStyle = '#14101c'; c.globalAlpha = 0.85; c.fill(); c.globalAlpha = 1; }
+  c.restore();
+  ell(x, y, rx, ry * sq); c.lineWidth = 1.2; c.strokeStyle = D; c.stroke();
+  c.beginPath(); c.ellipse(x, y, rx, ry * sq, 0, Math.PI * 1.04, Math.PI * 1.96); c.lineWidth = 2.4; c.strokeStyle = D; c.lineCap = 'round'; c.stroke();
+  pline(x - rx, y - ry * sq * 0.3, x - rx - 1.8, y - ry * sq * 0.75, D, 1.4);
+  if (m === 3 || k >= 6) pline(x - rx - 0.6, y - ry * sq - (m === 3 ? 1.6 : 2.2), x + rx + 0.8, y - ry * sq + (m === 3 ? 1.2 : -0.4), D, 1.5);
 }
 function pHead(k, s) {
   withLean(s, () => {
     const F = furOf(k, s.coat), m = s.mood, T = TEAM[s.team], e = k >= 7 ? 0.66 : 1, fw = Math.sin(s.tw * 1.1) * 2;
-    c.save(); c.translate(4, -20); c.scale(0.9, 0.9);
+    c.save(); c.translate(3, -9); c.scale(1.3, 1.3);
     // 귀
     c.beginPath(); c.moveTo(-11.4, -2.6); c.quadraticCurveTo(-12.4, -14 * e - 2, -8.6, -22 * e - 1); c.quadraticCurveTo(-3.2, -15 * e - 3, 0, -9); c.closePath(); shade(F.m, -22 * e, -3, 1, F.o);
     c.beginPath(); c.moveTo(2, -9); c.quadraticCurveTo(6, -17 * e - 3, 10.4, -22 * e - 1); c.quadraticCurveTo(12.6, -12 * e - 2, 11.8, -3); c.closePath(); shade(F.m, -22 * e, -3, 1, F.o);
@@ -468,24 +483,24 @@ function pHead(k, s) {
     ell(9.5, 3.2, 6.2, 4.6); c.fillStyle = F.b; c.fill();
     if (k === 4) { ell(9.5, 3.4, 6.2, 4.6); c.globalAlpha = 0.5; c.fillStyle = F.s; c.fill(); c.globalAlpha = 1; }
     ell(3, 5.4, 2.6, 1.6); c.fillStyle = 'rgba(255,125,150,.45)'; c.fill();
-    // 블랙팬서 눈
-    wakEye(1.2, -3.2, 0.82, k, m, s.blink); wakEye(10, -3.4, 0.56, k, m, s.blink);
-    if (k === 7) { pline(0.6, -0.2, 2.6, 6, '#14101c', 1.3); pline(8.6, 0, 9.4, 4.6, '#14101c', 1.1); }
+    // 큰 눈 · 코 · 입 · 수염
+    sdEye(1, -2.6, 3.7, 4.6, k, m, s.blink); sdEye(9.8, -2.8, 3.1, 4, k, m, s.blink);
+    ell(3.2, 4.6, 2.6, 1.6); c.fillStyle = 'rgba(255,125,150,.5)'; c.fill();
+    if (k === 7) { pline(0.6, 2.4, 2.2, 7, '#14101c', 1.3); pline(9.4, 2, 10, 6, '#14101c', 1.1); }
     if (k === 5) pline(-5, -9, -1, 0, '#d9534f', 1.1);
     if (k === 8) { pline(1, -9, 6, 1, '#c0262e', 1.1); pline(2, -6, 5, -7, '#c0262e', 1); pline(4, -3, 7, -4, '#c0262e', 1); }
-    // 코 · 입 · 수염
-    ell(15.2, 1.4, 2.1, 1.5); c.fillStyle = '#e8637f'; c.fill(); c.lineWidth = 0.8; c.strokeStyle = F.o; c.stroke();
+    ell(14.6, 2.6, 1.9, 1.4); c.fillStyle = '#e8637f'; c.fill(); c.lineWidth = 0.8; c.strokeStyle = F.o; c.stroke();
     const ink = '#2a1a28', fang = k >= 5;
     if (m === 3) {
-      ell(14.2, 6.4, 4.4, 3.2); c.fillStyle = '#7a1f2e'; c.fill(); c.lineWidth = 1; c.strokeStyle = ink; c.stroke(); ell(14.4, 7.6, 2.4, 1.2); c.fillStyle = PINK; c.fill();
-      tri(11.8, 4.4, 13.4, 4.4, 12.6, 7); c.fillStyle = '#ffffff'; c.fill(); tri(15.6, 4.6, 17.2, 4.6, 16.6, 7); c.fill();
-    } else if (m === 1) pline(12.6, 6.2, 17, 6.2, ink, 1.3);
-    else if (m === 2) { pline(12, 5, 17, 7, ink, 1.2); pline(17, 5, 12, 7, ink, 1.2); }
+      ell(14.4, 6.6, 3.9, 3); c.fillStyle = '#7a1f2e'; c.fill(); c.lineWidth = 1; c.strokeStyle = ink; c.stroke(); ell(14.6, 7.7, 2.2, 1.1); c.fillStyle = PINK; c.fill();
+      tri(12, 4.8, 13.6, 4.8, 12.8, 7.2); c.fillStyle = '#ffffff'; c.fill(); tri(15.4, 4.8, 17, 4.8, 16.4, 7.2); c.fill();
+    } else if (m === 1) { pline(12.8, 6.4, 16.6, 6.4, ink, 1.3); }
+    else if (m === 2) { pline(12.4, 5.2, 16.6, 7.2, ink, 1.2); pline(16.6, 5.2, 12.4, 7.2, ink, 1.2); }
     else {
-      c.beginPath(); c.moveTo(15.2, 3); c.lineTo(15.2, 5.2); c.moveTo(15.2, 5.2); c.quadraticCurveTo(13.6, 7.2, 11.6, 6); c.moveTo(15.2, 5.2); c.quadraticCurveTo(16.8, 6.8, 18, 5.6); c.lineWidth = 1.1; c.strokeStyle = ink; c.lineCap = 'round'; c.stroke();
+      c.beginPath(); c.moveTo(14.6, 4); c.lineTo(14.6, 5); c.moveTo(14.6, 5); c.quadraticCurveTo(13.4, 7, 11.8, 5.6); c.moveTo(14.6, 5); c.quadraticCurveTo(15.8, 7, 17.4, 5.6); c.lineWidth = 1.1; c.strokeStyle = ink; c.lineCap = 'round'; c.stroke();
       if (fang) { tri(12.4, 5.8, 13.8, 6.2, 13.2, 8); c.fillStyle = '#ffffff'; c.fill(); }
     }
-    const wh = '#f2eaff'; pline(12, 4.4, 25, 1.4, wh, 0.8); pline(12, 6.4, 26, 6.4, wh, 0.8); pline(12, 8.4, 24, 12, wh, 0.8);
+    const wh = '#f2eaff'; pline(13, 4.4, 24, 1.8, wh, 0.8); pline(13, 6.2, 25, 6.4, wh, 0.8); pline(13, 8, 23, 11, wh, 0.8);
     // 직업별 모자·장비
     if (k === 1) {
       tri(-9, -6.6, -21, -4 + fw, -17, -11 + fw); shade('#d9382c', -11, -4, 1, '#5a1410'); tri(-9, -4.4, -20, 1.4 + fw * 1.4, -16, -5 + fw); shade('#b02a20', -5, 2, 1, '#5a1410');
@@ -511,37 +526,42 @@ function pHead(k, s) {
     c.restore();
   });
 }
-// 앞손에 쥔 무기 (손 위치/각도는 armPose 에서)
+// 앞손에 쥔 무기 (손 위치/각도는 armPose 에서). 휘두를 때는 흰 궤적 호가 따라온다.
 function pWeapon(k, s) {
   const P = armPose(k, s, true), sw = P.sw;
   withLean(s, () => {
+    if (s.atkP > 0.2 && s.atkP < 0.78 && SWR[k]) {
+      const e = swingE(s.atkP), th = -2.4 + 3.4 * e, a0 = Math.max(-2.7, th - 1.5), R = SWR[k], TM = TEAM[s.team];
+      for (const [w, col, al] of [[9, TM.main, 0.35], [4.5, '#ffffff', 0.85]]) { c.globalAlpha = al * (1 - Math.abs(s.atkP - 0.45) * 1.2); c.beginPath(); c.arc(P.sx, P.sy, R + 8, a0, th); c.lineWidth = w; c.strokeStyle = col; c.lineCap = 'round'; c.stroke(); }
+      c.globalAlpha = 1;
+    }
     c.save(); c.translate(P.hx, P.hy);
-    if (k === 1) { c.rotate(P.ang); rr(-6, -1.8, 7, 3.6, 1); shade('#7b3f2a', -2, 2, 1, '#2a140c'); tri(0, -2.4, 15, 0.8, 0, 2.4); shade('#dfe6f2', -2.4, 2.4, 1, '#5d6482'); pline(2, 0, 12, 0.8, '#ffffff'); }
+    if (k === 1) { c.rotate(P.ang); rr(-6, -1.8, 7, 3.6, 1); shade('#7b3f2a', -2, 2, 1, '#2a140c'); tri(0, -2.6, 16, 0.8, 0, 2.6); shade('#dfe6f2', -2.6, 2.6, 1, '#5d6482'); pline(2, 0, 13, 0.8, '#ffffff'); }
     else if (k === 2) {
       c.translate(-8, 0); c.beginPath(); c.arc(-9, 0, 17, -1.1, 1.1); c.lineWidth = 3.4; c.strokeStyle = '#3a2414'; c.lineCap = 'round'; c.stroke(); c.lineWidth = 1.8; c.strokeStyle = '#a06a3c'; c.stroke();
       const tx = -9 + Math.cos(1.1) * 17, ty = Math.sin(1.1) * 17, B = armPose(k, s, false), bx = B.hx - (P.hx - 8) - 2, by = B.hy - P.hy;
       const pull = sw > 0.05 ? [bx, by] : [tx, 0]; pline(tx, -ty, pull[0], pull[1], '#ffffff', 0.9); pline(pull[0], pull[1], tx, ty, '#ffffff', 0.9);
       if (sw > 0.1) { pline(pull[0], pull[1], 12, 0, '#e9eefb', 1.2); pline(pull[0], pull[1], pull[0] + 3, pull[1] - 1.6, '#ff6a4d', 1.4); }
-    } else if (k === 3) { c.rotate(P.ang); rr(0, -2.2, 24, 4.4, 1.6); shade('#dfe6f2', -2.2, 2.2, 1, '#5d6482'); pline(2, -1, 22, -1, '#ffffff'); rr(-1.4, -5.4, 3.4, 10.8, 1.2); shade(GOLD, -5.4, 5.4, 1, '#6a4a10'); rr(-7, -1.8, 5.6, 3.6, 1.2); shade('#7b3f2a', -1.8, 1.8, 1, '#2a140c'); }
+    } else if (k === 3) { c.rotate(P.ang); rr(0, -2.4, 26, 4.8, 1.6); shade('#dfe6f2', -2.4, 2.4, 1, '#5d6482'); pline(2, -1, 24, -1, '#ffffff'); rr(-1.4, -5.8, 3.6, 11.6, 1.2); shade(GOLD, -5.8, 5.8, 1, '#6a4a10'); rr(-7, -2, 5.6, 4, 1.2); shade('#7b3f2a', -2, 2, 1, '#2a140c'); }
     else if (k === 4) {
-      c.rotate(-0.12 - sw * 0.5); rr(-1.5, -46, 3, 64, 1.4); shade('#8a5a33', -46, 18, 1, '#3a2414');
-      const glow = 6 + sw * 4 + Math.sin(s.tw) * 0.9; c.globalAlpha = 0.5; circ(0, -50, glow + 3.5); c.fillStyle = '#c9a5ff'; c.fill(); c.globalAlpha = 1; circ(0, -50, glow - 0.5); shade('#b58bff', -56, -44, 1, '#4a2a8a'); px(-glow * 0.3, -50 - glow * 0.3, '#ffffff');
-    } else if (k === 5) { c.rotate(P.ang); rr(0, -4.4, 42, 8.8, 2.8); shade('#e6ebf5', -4.4, 4.4, 1.1, '#5d6482'); pline(3, 0, 38, 0, '#aab3c8'); pline(4, -2, 36, -2, '#ffffff'); rr(-2, -9.2, 5, 18.4, 1.8); shade(GOLD, -9.2, 9.2, 1, '#6a4a10'); rr(-11, -3, 9.6, 6, 1.6); shade('#7b3f2a', -3, 3, 1, '#2a140c'); circ(1, 0, 2); c.fillStyle = '#ff4d3d'; c.fill(); }
-    else if (k === 7 && s.moving) { c.restore(); c.save(); for (const [y, l] of [[-12, 16], [-3, 24], [8, 14]]) pline(-8, y, -8 - l, y, 'rgba(255,255,255,.7)', 1.4); }
+      c.rotate(-0.12 - sw * 0.5); rr(-1.6, -44, 3.2, 62, 1.4); shade('#8a5a33', -44, 18, 1, '#3a2414');
+      const glow = 6.5 + sw * 4 + Math.sin(s.tw) * 0.9; c.globalAlpha = 0.5; circ(0, -48, glow + 3.5); c.fillStyle = '#c9a5ff'; c.fill(); c.globalAlpha = 1; circ(0, -48, glow - 0.5); shade('#b58bff', -54, -42, 1, '#4a2a8a'); px(-glow * 0.3, -48 - glow * 0.3, '#ffffff');
+    } else if (k === 5) { c.rotate(P.ang); rr(0, -4.8, 44, 9.6, 2.8); shade('#e6ebf5', -4.8, 4.8, 1.1, '#5d6482'); pline(3, 0, 40, 0, '#aab3c8'); pline(4, -2, 38, -2, '#ffffff'); rr(-2, -9.6, 5, 19.2, 1.8); shade(GOLD, -9.6, 9.6, 1, '#6a4a10'); rr(-11, -3.2, 9.6, 6.4, 1.6); shade('#7b3f2a', -3.2, 3.2, 1, '#2a140c'); circ(1, 0, 2); c.fillStyle = '#ff4d3d'; c.fill(); }
+    else if (k === 7 && s.moving) { c.restore(); c.save(); for (const [y, l] of [[-2, 16], [7, 24], [15, 14]]) pline(-12, y, -12 - l, y, 'rgba(255,255,255,.7)', 1.4); }
     c.restore();
   });
 }
 function catParts(k) {
   const P = [];
-  if (k === 5) P.push({ n: 'cape', ox: -12, oy: -2, w: 26, h: 28, draw: (s) => pCape(k, s) });
-  P.push({ n: 'tail', ox: -12, oy: 10, w: 18, h: 16, draw: (s) => pTail(k, s) });
-  P.push({ n: 'legB', ox: -2, oy: 13, w: 10, h: 18, still: 1, draw: (s) => pLegs(k, s, true) });
-  P.push({ n: 'armB', ox: -2, oy: -4, w: 8, h: 14, lunge: 0.25, draw: (s) => pArmB(k, s) });
-  P.push({ n: 'body', ox: 0, oy: -3, w: 20, h: 28, lunge: 0.25, draw: (s) => pBody(k, s) });
-  P.push({ n: 'legF', ox: 4, oy: 13, w: 10, h: 18, still: 1, draw: (s) => pLegs(k, s, false) });
-  P.push({ n: 'head', ox: 4, oy: -20, w: 24, h: 22, head: 1, lunge: 0.5, draw: (s) => pHead(k, s) });
-  P.push({ n: 'armF', ox: 8, oy: -4, w: 14, h: 14, lunge: 0.8, draw: (s) => pArmF(k, s) });
-  P.push({ n: 'weapon', ox: 12, oy: -8, w: k === 5 ? 40 : 22, h: 10, lunge: 0.8, noPiece: [0, 6, 7, 8].includes(k) ? 1 : 0, draw: (s) => pWeapon(k, s) });
+  if (k === 5) P.push({ n: 'cape', ox: -12, oy: 8, w: 24, h: 22, draw: (s) => pCape(k, s) });
+  P.push({ n: 'tail', ox: -12, oy: 12, w: 18, h: 14, draw: (s) => pTail(k, s) });
+  P.push({ n: 'legB', ox: -3, oy: 17, w: 9, h: 10, still: 1, draw: (s) => pLegs(k, s, true) });
+  P.push({ n: 'armB', ox: -3, oy: 6, w: 8, h: 10, lunge: 0.25, draw: (s) => pArmB(k, s) });
+  P.push({ n: 'body', ox: 0, oy: 8, w: 20, h: 18, lunge: 0.25, draw: (s) => pBody(k, s) });
+  P.push({ n: 'legF', ox: 5, oy: 17, w: 9, h: 10, still: 1, draw: (s) => pLegs(k, s, false) });
+  P.push({ n: 'head', ox: 3, oy: -9, w: 32, h: 28, head: 1, lunge: 0.5, draw: (s) => pHead(k, s) });
+  P.push({ n: 'armF', ox: 9, oy: 7, w: 12, h: 10, lunge: 0.8, draw: (s) => pArmF(k, s) });
+  P.push({ n: 'weapon', ox: 14, oy: 6, w: k === 5 ? 40 : 22, h: 10, lunge: 0.8, noPiece: [0, 6, 7, 8].includes(k) ? 1 : 0, draw: (s) => pWeapon(k, s) });
   return P;
 }
 const PARTS = CATS.map((D) => catParts(D.k));
@@ -622,7 +642,7 @@ function newGame() {
   mkBody(ground, { kind: 'ground' });
   Composite.add(engine.world, ground);
   S = [mkSide(), mkSide()];
-  G = { state: 'title', t: 0, ts: 1, slowT: 0, overT: 0, winner: -1, cd: {}, special: 0.4, cats: [], ai: { timer: 3 }, aiMul: 1.2, stats: { kills: 0, lost: 0 }, lastText: 0, deadBase: [false, false] };
+  G = { state: 'title', t: 0, ts: 1, slowT: 0, overT: 0, winner: -1, cd: {}, special: 0.4, cats: [], ai: { timer: 3 }, aiMul: 1.2, stats: { kills: 0, lost: 0 }, lastText: 0, deadBase: [false, false], hitQ: [], skT: 0, skN: Array(9).fill(0), force: 0 };
   const st = STAGES[stage - 1]; G.st = st; G.aiMul = st.inc; S[1].gold = st.gold;
   if (st.lv > 1) { S[1].baseLv = st.lv; S[1].hp = BASE_HP[st.lv - 1]; }
   ensureBG();
@@ -649,11 +669,12 @@ const sideOf = (u) => S[u.g.team];
 function hitCat(t, dmg, dir, crit) {
   const g = t.g; if (g.dead) return;
   dmg *= 1 + Math.max(0, G.t - 140) / 80;       // 교착 방지: 오래 끌면 모두 더 세게 때린다
-  const d = dmg * (1 - 0.12 * S[g.team].up.def) * (CATS[g.k].dr || 1);
+  const d = dmg * (1 - 0.12 * S[g.team].up.def) * (CATS[g.k].dr || 1) * (g.shieldT > 0 ? 0.5 : 1);
   g.hp -= d; g.hurt = 12; g.squash = 8;
   dmgNum(t, d, crit); addV('ring', t.position.x, t.position.y - 8, { life: 12, size: 26, color: '#fff' });
-  fx('spark', t.position.x, t.position.y - 8, crit ? 6 : 2);
-  if (crit) pop(t.position.x, t.position.y - 44, '치명타!', '#ff8a8a', 34);
+  addV('flash', t.position.x, t.position.y - 8, { life: 9, size: crit ? 56 : 38, color: crit ? '#ff9b8a' : '#fff6c8' });
+  fx('spark', t.position.x, t.position.y - 8, crit ? 10 : 4, dir, crit ? '#ff6a4d' : '#ffd84a');
+  if (crit) { pop(t.position.x, t.position.y - 44, '치명타!', '#ff8a8a', 34); G.slowT = Math.max(G.slowT, 4); }
   if (g.hp <= 0) killCat(t, dir);
 }
 function kickCat(b, vx, vy, stun) { if (b.g.dead) return; b.g.stun = stun; Body.setVelocity(b, { x: vx, y: vy }); }
@@ -707,12 +728,13 @@ function explode(x, y, team, dmg, rad, knock = 1, magic = false) {
 }
 function castOrb(u, tgt) {
   const g = u.g, D = CATS[g.k], s = S[g.team], arrow = D.ranged === 'arrow';
-  g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1); g.atk = 14;
+  g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1) * (g.frenzyT > 0 ? 0.5 : 1); g.atk = ATK_T;
   const edgeEn = g.team ? EDGE : W - EDGE, x0 = u.position.x + g.face * 16, y0 = u.position.y - (arrow ? 6 : 30);
   shots.push({ kind: arrow ? 'arrow' : 'orb', base: !!tgt.base, x0, y0, x1: tgt.base ? edgeEn : tgt.body.position.x, y1: tgt.base ? GROUND - (arrow ? 36 : 40) : tgt.body.position.y - (arrow ? 4 : 0),
     t: arrow ? -5 : -14, dur: arrow ? 24 : 34, team: g.team, dmg: D.atk * (1 + 0.15 * s.up.atk), tb: tgt.base ? null : tgt.body, x: x0, y: y0 });
   if (!arrow) addV('charge', u.position.x + g.face * 18, u.position.y - 26, { life: 16, size: 26 });
   sfx('shoot');
+  if (rollSkill(g)) skillRanged(u, tgt, D.atk * (1 + 0.15 * s.up.atk));
 }
 function drawArrow(s) {
   const a = Math.atan2(s.y - s.py, s.x - s.px) || (s.team ? Math.PI : 0);
@@ -776,7 +798,7 @@ function buy(team, key) {
 }
 
 function addV(type, x, y, o = {}) {
-  if (vfx.length > 120) vfx.shift();
+  if (vfx.length > 170) vfx.shift();
   const v = Object.assign({ type, x, y, life: 20, dir: 1, size: 40, color: '#fff' }, o); v.max = v.life; vfx.push(v); return v;
 }
 function dmgNum(t, d, crit) {
@@ -785,7 +807,7 @@ function dmgNum(t, d, crit) {
   addV('num', t.position.x + rnd(-8, 8), t.position.y - 34 - 8 * CATS[g.k].sc, { life: 44, vy: -1.5, val: d, str: String(Math.round(d)), size: crit ? 42 : 26, color: crit ? '#ff6a4d' : g.team === 0 ? '#ff9b9b' : '#ffe27a', tgt: t });
 }
 function slashFx(name, x, y, fc, crit) {
-  addV('ring', x, y, { life: 12, size: 30, color: '#fff' });
+  addV('ring', x, y, { life: 14, size: 44, color: '#fff' }); addV('flash', x, y, { life: 8, size: crit ? 64 : 44, color: '#fff6c8' }); fx('spark', x, y, crit ? 8 : 4, fc, '#ffe27a');
   if (name === 'claw') { addV('claw', x, y, { dir: fc, life: 16 }); fx('star', x, y, 2); }
   else if (name === 'claw2') { addV('claw', x, y, { dir: fc, life: 16, col2: '#ff5a4b' }); fx('spark', x, y, 6, fc, '#ff3b3b'); }
   else if (name === 'x') {
@@ -820,10 +842,10 @@ function drawVfx() {
     } else if (t === 'ring') {
       const r = v.size * (0.25 + k * 0.85); c.beginPath(); c.ellipse(0, 0, r, r * (v.sq || 1), 0, 0, TAU); c.lineWidth = 2 + 9 * (1 - k); c.strokeStyle = v.color; c.stroke();
     } else if (t === 'claw') {
-      c.scale(v.dir, 1);
+      c.scale(v.dir * 1.45, 1.45);
       for (let i = 0; i < 3; i++) { const p = clamp(k * 2.6 - i * 0.18, 0, 1), x0 = -16 + i * 14, y0 = -30; line(x0, y0, x0 + 20 * p, y0 + 46 * p, 9, INK); line(x0, y0, x0 + 20 * p, y0 + 46 * p, 5, v.col2 || '#ffb347'); line(x0 + 1, y0 + 2, x0 + 19 * p, y0 + 44 * p, 1.6, '#fff'); }
     } else if (t === 'xslash') {
-      c.scale(v.dir, 1);
+      c.scale(v.dir * 1.4, 1.4);
       for (const [x0, y0, x1, y1, d] of [[-34, -38, 34, 38, 0], [34, -38, -34, 38, 0.18]]) {
         const p = clamp((k - d) * 3.2, 0, 1), ex = x0 + (x1 - x0) * p, ey = y0 + (y1 - y0) * p;
         line(x0, y0, ex, ey, 10 * (1 - k) + 4, INK); line(x0, y0, ex, ey, 6 * (1 - k) + 2, v.color);
@@ -833,7 +855,7 @@ function drawVfx() {
       for (const [w, col] of [[8 * (1 - k) + 6, INK], [5 * (1 - k) + 2, '#fff']]) { c.beginPath(); c.arc(-10, 0, r, -1.3, 1.3); c.lineWidth = w; c.strokeStyle = col; c.stroke(); }
     } else if (t === 'crescent') {
       c.scale(v.dir, 1); const e = -1.15 + 2.3 * clamp(k * 3, 0, 1), f = 1 - k * 0.5;
-      for (const [w, col] of [[26 * f + 6, INK], [18 * f + 2, '#ffd84a'], [7 * f, '#fff6c8']]) { c.beginPath(); c.arc(-v.size * 0.35, 0, v.size, -1.15, e); c.lineWidth = w; c.strokeStyle = col; c.stroke(); }
+      for (const [w, col] of [[26 * f + 6, INK], [18 * f + 2, v.color !== '#fff' ? v.color : '#ffd84a'], [7 * f, '#fff6c8']]) { c.beginPath(); c.arc(-v.size * 0.35, 0, v.size, -1.15, e); c.lineWidth = w; c.strokeStyle = col; c.stroke(); }
     } else if (t === 'crack') {
       const n = Math.ceil(v.pts.length * clamp(k * 4, 0, 1)) || 1;
       for (const [w, col] of [[8, INK], [3.4, '#ffd84a']]) { c.beginPath(); v.pts.slice(0, n).forEach(([dx, dy], i) => (i ? c.lineTo(dx, dy) : c.moveTo(dx, dy))); c.lineWidth = w; c.strokeStyle = col; c.stroke(); }
@@ -846,6 +868,25 @@ function drawVfx() {
       const r = v.size * (1 - k) + 5; circ(0, 0, r); c.lineWidth = 3; c.strokeStyle = '#d6b8ff'; c.stroke();
       for (let i = 0; i < 5; i++) { const a = k * 9 + i * TAU / 5; circ(Math.cos(a) * r * 1.6, Math.sin(a) * r * 1.6, 3); c.fillStyle = '#fff'; c.fill(); }
       circ(0, 0, 4 + k * 6); c.fillStyle = '#b58bff'; c.fill();
+    } else if (t === 'flash') {
+      const r = v.size * (0.35 + k * 0.75); c.globalAlpha *= 0.8; circ(0, 0, r); c.fillStyle = v.color; c.fill(); c.globalAlpha = clamp(v.life / v.max * 1.8, 0, 1); circ(0, 0, r * 0.5); c.fillStyle = '#fff'; c.fill();
+      for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + k * 0.6, l = r * (1.2 + k); line(Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.5, Math.cos(a) * l, Math.sin(a) * l, 2.5 * (1 - k) + 1, '#fff'); }
+    } else if (t === 'bolt') {
+      const dx = v.to[0] - v.x, dy = v.to[1] - v.y, n = 9, seed = Math.floor(k * 4);
+      c.beginPath(); c.moveTo(0, 0); for (let i = 1; i < n; i++) { const f = i / n, j = Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453; c.lineTo(dx * f + ((j - Math.floor(j)) - 0.5) * 26, dy * f + (((j * 3.7) - Math.floor(j * 3.7)) - 0.5) * 26); } c.lineTo(dx, dy);
+      for (const [w, col] of [[12 * (1 - k) + 4, v.color], [5 * (1 - k) + 1.5, '#ffffff']]) { c.lineWidth = w; c.strokeStyle = col; c.stroke(); }
+    } else if (t === 'pillar') {
+      const w = v.size * (1 - k * 0.7), h = 520; c.globalAlpha *= 0.55; c.fillStyle = v.color; c.fillRect(-w, -h, w * 2, h); c.globalAlpha = clamp(v.life / v.max * 1.8, 0, 1); c.fillStyle = '#fff'; c.fillRect(-w * 0.35, -h, w * 0.7, h);
+      c.beginPath(); c.ellipse(0, 0, w * 1.8, w * 0.5, 0, 0, TAU); c.fillStyle = v.color; c.fill();
+    } else if (t === 'dome') {
+      const r = v.size * (0.5 + Math.min(1, k * 3) * 0.5); c.beginPath(); c.arc(0, 0, r, Math.PI, TAU); c.closePath(); c.globalAlpha *= 0.35; c.fillStyle = v.color; c.fill(); c.globalAlpha = clamp(v.life / v.max * 1.8, 0, 1); c.lineWidth = 5; c.strokeStyle = v.color; c.stroke();
+      for (let i = 1; i < 4; i++) { c.beginPath(); c.arc(0, 0, r * i / 4, Math.PI, TAU); c.lineWidth = 1.5; c.strokeStyle = '#fff'; c.stroke(); }
+    } else if (t === 'skyarrow') {
+      const p = clamp(k / 0.65, 0, 1), ay = -380 * (1 - p); line(0, ay - 40, 0, ay, 5, INK); line(0, ay - 40, 0, ay, 2.6, v.color); tri(-5, ay, 0, ay + 14, 5, ay); c.fillStyle = '#dfe6f2'; c.fill();
+    } else if (t === 'dashline') {
+      c.scale(v.dir, 1); for (let i = 0; i < 6; i++) { const y = -34 + i * 13, l = v.size * (0.6 + 0.4 * ((i * 37) % 10) / 10), o = -v.size * 0.5 + k * 40; line(o, y, o + l * (1 - k * 0.5), y, 5 * (1 - k) + 1, i % 2 ? '#fff' : v.color); }
+    } else if (t === 'banner') {
+      const sc = k < 0.15 ? 0.5 + k / 0.15 * 0.9 : 1.4 - Math.min(0.4, (k - 0.15) * 0.5); c.scale(sc, sc); c.font = `${v.size}px Jua, sans-serif`; c.textAlign = 'center'; c.lineWidth = 8; c.strokeStyle = INK; c.strokeText(v.text, 0, 0); c.fillStyle = v.color; c.fillText(v.text, 0, 0); c.lineWidth = 1.5; c.strokeStyle = '#fff'; c.strokeText(v.text, 0, 0);
     } else if (t === 'ghost') {
       c.globalAlpha = 0.35 * (v.life / v.max); c.scale(v.face * v.sc, v.sc);
       drawSprites(v.k, Object.assign({}, IDLE, { team: v.team, moving: true, t: 0.6 }), 0, 0);
@@ -853,18 +894,111 @@ function drawVfx() {
     c.restore();
   }
 }
+/* ---------------- 패시브 스킬 ---------------- */
+const later = (fr, fn) => G.hitQ.push({ t: fr, fn });
+const foesOf = (g) => G.cats.filter((e) => e.g.team !== g.team && !e.g.dead);
+function rollSkill(g) { return G.state === 'play' && (G.force || Math.random() < CATS[g.k].sp); }
+function skillFx(u, big) {
+  const g = u.g, D = CATS[g.k], col = SKILL_COL[g.k]; G.skN[g.k]++;
+  addV('banner', u.position.x, u.position.y - D.h * 0.5 - 44 * D.sc, { life: 56, vy: -0.7, text: D.skill, color: col, size: 30 + (D.unlock - 1) * 4 });
+  addV('ring', u.position.x, u.position.y - 6, { life: 24, size: 120 + D.unlock * 20, color: col, sq: 0.45 });
+  addV('flash', u.position.x, u.position.y - 14, { life: 12, size: 90, color: col });
+  fx('star', u.position.x, u.position.y - 14, 5 + D.unlock * 2); fx('spark', u.position.x, u.position.y - 14, 10, 0, col);
+  cam.shake = Math.max(cam.shake, 5 + D.unlock * 2);
+  if (big && D.unlock >= 3 && G.skT <= 0) { G.slowT = Math.max(G.slowT, 10); G.skT = 60; }
+  sfx(D.unlock >= 3 ? 'heavy' : 'zap');
+}
+function hitFoe(e, dmg, fc, crit) { if (e.g.dead) return; hitCat(e, dmg, fc, crit); if (!e.g.dead) kickCat(e, fc * 2.5, -3.5, 12); }
+function skillMelee(u, tg, dmg) {   // 근접 유닛 스킬
+  const g = u.g, D = CATS[g.k], fc = g.face, tb = tg.base ? null : tg.body, ux = u.position.x, uy = u.position.y - 6, tx = tb ? tb.position.x : (g.team ? EDGE : W - EDGE), ty = tb ? tb.position.y - 8 : GROUND - 40;
+  const team = g.team, foes = () => foesOf(g), hitT = (m, crit) => { if (tb && !tb.g.dead) hitFoe(tb, dmg * m, fc, crit); else if (tg.base) dmgBase(1 - team, dmg * m); };
+  skillFx(u, true);
+  switch (g.k) {
+    case 0:   // 냥냥 연타
+      for (let i = 0; i < 3; i++) later(5 + i * 6, () => { hitT(0.8, false); addV('claw', tx + rnd(-10, 10), ty + rnd(-8, 8), { dir: fc, life: 16, col2: pick(['#ffb347', '#ff8a3a', '#ffd84a']) }); addV('flash', tx, ty, { life: 8, size: 40, color: '#ffe27a' }); fx('star', tx, ty, 3); sfx('hit'); });
+      break;
+    case 1:   // 그림자 습격: 뒤로 순간이동 + 3배 치명타
+      if (tb && !tb.g.dead) {
+        for (let i = 0; i < 3; i++) addV('ghost', ux + (tx - ux) * i / 3, u.position.y + CATS[1].h / 2 - FOOT * CATS[1].sc + g.lane, { life: 16 - i * 2, k: 1, face: fc, sc: CATS[1].sc, team });
+        fx('dust', ux, uy, 8); fx('spark', ux, uy, 8, 0, '#b58bff');
+        Body.setPosition(u, { x: tx + fc * 30, y: u.position.y }); g.first = false;
+        addV('ring', tx + fc * 30, uy, { life: 18, size: 90, color: '#b58bff' });
+      }
+      later(3, () => { hitT(3, true); addV('xslash', tx, ty, { dir: fc, life: 18, color: '#ff3b3b' }); addV('xslash', tx, ty, { dir: -fc, life: 20, color: '#d6b8ff' }); addV('flash', tx, ty, { life: 12, size: 80, color: '#ff6a4d' }); fx('spark', tx, ty, 12, fc, '#ff5a4b'); });
+      break;
+    case 3: {   // 방패 강타
+      g.shieldT = 180; addV('dome', ux, u.position.y + 6, { life: 46, size: 86, color: '#ffd84a' });
+      hitT(1.5, false); let n = 0;
+      for (const e of foes()) { const dx = (e.position.x - ux) * fc; if (dx > -20 && dx < 150 && n < 3) { e.g.stun = 45; kickCat(e, fc * 5, -7, 45); n++; } }
+      addV('wave', ux + fc * 30, uy, { dir: fc, life: 22, size: 90 }); addV('ring', ux + fc * 30, uy + 10, { life: 20, size: 160, color: '#ffe27a', sq: 0.4 });
+      break;
+    }
+    case 5:   // 성검 낙뢰
+      later(8, () => {
+        addV('pillar', tx, GROUND, { life: 34, size: 70, color: '#fff3a0' }); addV('pillar', tx, GROUND, { life: 22, size: 34, color: '#ffffff' });
+        explode(tx, GROUND - 24, team, dmg * 1.8, 130, 1.3, false);
+        const pts = []; for (let i = -6; i <= 6; i++) pts.push([i * 14 + rnd(-3, 3), i % 2 ? rnd(2, 8) : rnd(-2, 3)]); addV('crack', tx, GROUND + 2, { life: 44, pts });
+        cam.shake = Math.max(cam.shake, 16); G.slowT = Math.max(G.slowT, 6);
+      });
+      break;
+    case 6:   // 피의 광란
+      g.hp = Math.min(g.max, g.hp + g.max * 0.2); g.frenzyT = 240; pop(ux, u.position.y - 70, '+' + Math.round(g.max * 0.2), '#7dff9b', 34);
+      for (let i = 0; i < 6; i++) fx('spark', ux + rnd(-20, 20), uy, 1, 0, '#7dff9b');
+      hitT(1.0, false); addV('claw', tx, ty, { dir: fc, life: 16, col2: '#ff3b3b' });
+      break;
+    case 7: {   // 섬광 돌진
+      const lim = g.team ? EDGE + 40 : W - EDGE - 40, nx = clamp(ux + fc * 170, Math.min(ux, lim), Math.max(ux, lim));
+      for (let i = 0; i < 5; i++) addV('ghost', ux + (nx - ux) * i / 5, u.position.y + CATS[7].h / 2 - FOOT * CATS[7].sc + g.lane, { life: 22 - i * 3, k: 7, face: fc, sc: CATS[7].sc, team });
+      addV('dashline', (ux + nx) / 2, uy, { life: 18, size: Math.abs(nx - ux) + 60, dir: fc, color: '#ffe27a' });
+      for (const e of foes()) { const dx = (e.position.x - ux) * fc, len = (nx - ux) * fc; if (dx > -30 && dx < len + 40) { hitFoe(e, dmg * 1.3, fc, true); addV('flash', e.position.x, e.position.y - 8, { life: 10, size: 50, color: '#ffe27a' }); } }
+      Body.setPosition(u, { x: nx, y: u.position.y }); fx('dust', ux, GROUND - 6, 8, -fc); fx('spark', nx, uy, 10, fc, '#ffd84a'); break;
+    }
+    case 8: {   // 흑염 대참격
+      for (const [sz, col] of [[150, '#ff3b3b'], [118, '#7a1f4e'], [84, '#ffd0c8']]) addV('crescent', ux + fc * 40, uy - 10, { dir: fc, life: 26, size: sz, color: col });
+      later(6, () => {
+        for (const e of foes()) { const dx = (e.position.x - ux) * fc; if (dx > -20 && dx < 260) { hitFoe(e, dmg * 2.2, fc, true); kickCat(e, fc * 7, -9, 30); fx('spark', e.position.x, e.position.y - 8, 6, fc, '#ff3b3b'); } }
+        if (tg.base || (tb && Math.abs(tx - (g.team ? EDGE : W - EDGE)) < 260)) dmgBase(1 - team, dmg * 1.5);
+        for (let i = 0; i < 14; i++) fx('spark', ux + fc * rnd(30, 260), GROUND - rnd(4, 60), 1, fc, pick(['#ff3b3b', '#ff9b5a', '#3a1428']));
+        cam.shake = Math.max(cam.shake, 18);
+      });
+      break;
+    }
+  }
+}
+function skillRanged(u, tg, dmg) {   // 원거리 유닛 스킬 (궁수: 화살비, 마법사: 연쇄 번개)
+  const g = u.g, fc = g.face, team = g.team, tb = tg.base ? null : tg.body, tx = tb ? tb.position.x : (team ? EDGE : W - EDGE);
+  skillFx(u, true);
+  if (g.k === 2) {
+    for (let i = 0; i < 5; i++) {
+      const x = tx + rnd(-80, 80), d = 6 + i * 4;
+      later(d, () => addV('skyarrow', x, GROUND - 6, { life: 12, color: '#9be37a' }));
+      later(d + 10, () => { fx('dust', x, GROUND - 4, 3); fx('spark', x, GROUND - 14, 4, 0, '#d9ffc2'); addV('ring', x, GROUND - 6, { life: 10, size: 36, color: '#d9ffc2', sq: 0.5 });
+        for (const e of foesOf(g)) if (Math.abs(e.position.x - x) < 42) hitFoe(e, dmg * 0.7, fc, false);
+        if (Math.abs(x - (team ? EDGE : W - EDGE)) < 70) dmgBase(1 - team, dmg * 0.7); sfx('hit'); });
+    }
+  } else if (g.k === 4) {
+    const done = new Set(); let px = u.position.x + fc * 20, py = u.position.y - 30, cur = tb;
+    if (!cur) { later(6, () => { addV('bolt', tx, GROUND - 120, { life: 16, to: [tx, GROUND - 44], color: '#d6b8ff' }); dmgBase(1 - team, dmg * 0.9); fx('spark', tx, GROUND - 44, 8, 0, '#d6b8ff'); }); return; }
+    for (let i = 0; i < 5 && cur; i++) {
+      const e = cur; done.add(e); const fx0 = px, fy0 = py, ex = e.position.x, ey = e.position.y - 10; px = ex; py = ey;
+      later(5 + i * 4, () => { if (e.g.dead) return; addV('bolt', fx0, fy0, { life: 16, to: [e.position.x, e.position.y - 10], color: i % 2 ? '#ffffff' : '#d6b8ff' }); hitFoe(e, dmg * 0.9, fc, false); addV('flash', e.position.x, e.position.y - 10, { life: 10, size: 56, color: '#c9a5ff' }); fx('spark', e.position.x, e.position.y - 10, 6, 0, '#e8d8ff'); sfx('zap'); });
+      let nb = null, nd = 190; for (const o of foesOf(g)) { if (done.has(o)) continue; const d = Math.hypot(o.position.x - ex, o.position.y - e.position.y); if (d < nd) { nd = d; nb = o; } } cur = nb;
+    }
+  }
+}
 function swing(u, tg) {
   const g = u.g, D = CATS[g.k], s = sideOf(u), fc = g.face;
-  g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1); g.atk = 14;
+  g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1) * (g.frenzyT > 0 ? 0.5 : 1); g.atk = ATK_T;
   let dmg = D.atk * (1 + 0.15 * s.up.atk), crit = false;
   if (D.firstMul && g.first) { dmg *= D.firstMul; crit = true; g.first = false; }
   const ux = u.position.x, uy = u.position.y + D.h / 2 - FOOT * D.sc + g.lane;
   if (D.ghost) for (let i = 1; i <= 2; i++) addV('ghost', ux - fc * i * 20, uy, { life: 14 - i * 2, k: g.k, face: fc, sc: D.sc * (1 + g.lane / 260), team: g.team });
   if (D.big) bigSlash(u);
+  const sk = rollSkill(g);
   g.n = (g.n || 0) + 1; if (D.roar && g.n % 4 === 0) roar(u);
   if (tg.base) {
     dmgBase(1 - g.team, dmg * (D.area ? 1.4 : 1)); if (!D.big) slashFx(D.fx, ux + fc * (D.rng + 6), uy - 16, fc, crit);
-    fx('spark', ux + fc * 24, uy - 6, 3); sfx(D.big ? 'heavy' : 'slash'); return;
+    fx('spark', ux + fc * 24, uy - 6, 3); sfx(D.big ? 'heavy' : 'slash'); if (sk) skillMelee(u, tg, dmg); return;
   }
   if (D.area) {
     let n = 0;
@@ -875,12 +1009,13 @@ function swing(u, tg) {
     }
   } else {
     hitCat(tg.body, dmg, fc, crit);
-    if (D.bleed && !tg.body.g.dead) { tg.body.g.bleed = 150; tg.body.g.bleedDmg = Math.max(1.5, D.atk * 0.28 * (1 + 0.15 * s.up.atk)); fx('spark', tg.body.position.x, tg.body.position.y - 8, 4, fc, '#ff3b3b'); }
+    if (D.bleed && !tg.body.g.dead) { tg.body.g.bleed = 150; tg.body.g.bleedDmg = Math.max(1.5, D.atk * 0.28 * (1 + 0.15 * s.up.atk)) * (g.frenzyT > 0 ? 2 : 1); fx('spark', tg.body.position.x, tg.body.position.y - 8, 4, fc, '#ff3b3b'); }
     if (!tg.body.g.dead && (crit || D.taunt)) kickCat(tg.body, fc * (g.k === 7 ? 5 : 2.4), g.k === 7 ? -5 : -2.5, g.k === 7 ? 16 : 10);
     slashFx(D.fx, tg.body.position.x, tg.body.position.y - 8, fc, crit);
     fx('spark', tg.body.position.x - fc * 8, tg.body.position.y - 6, 3); sfx(g.k === 0 ? 'hit' : 'slash');
   }
   if (Math.random() < 0.14) pop(u.position.x + fc * 26, u.position.y - 34, pick(['냥펀치!', '퍽!', '챙!', '냥!']), '#fff4dc', 28);
+  if (sk) skillMelee(u, tg, dmg);
 }
 
 function updateCat(u, ts) {
@@ -890,6 +1025,8 @@ function updateCat(u, ts) {
     g.bleed -= ts; g.bt = (g.bt || 0) + ts;
     if (g.bt >= 30) { g.bt = 0; const bd = g.bleedDmg * (1 - 0.12 * S[g.team].up.def); g.hp -= bd; g.hurt = 4; fx('spark', u.position.x, u.position.y - 4, 2, 0, '#ff3b3b'); dmgNum(u, bd, false); if (g.hp <= 0) { killCat(u, 0); return; } }
   } g.hurt = Math.max(0, g.hurt - ts); g.atk = Math.max(0, g.atk - ts);
+  if (g.shieldT > 0) g.shieldT -= ts;
+  if (g.frenzyT > 0) { g.frenzyT -= ts; if (Math.random() < 0.5) fx('spark', u.position.x + rnd(-14, 14), u.position.y + rnd(-D.h * 0.4, D.h * 0.3), 1, 0, '#ff5a4b'); }
   if (D.aura && Math.random() < D.aura.p) fx('spark', u.position.x + rnd(-D.w * 0.4, D.w * 0.4), u.position.y + rnd(-D.h * 0.5, D.h * 0.2), 1, 0, D.aura.c);
   if (u.position.x < -200 || u.position.x > W + 200 || u.position.y > H + 300) { killCat(u, dir); return; }
   if (g.stun > 0 || u.position.y < GROUND - D.h / 2 - 5) { g.stun = Math.max(0, g.stun - ts); g.spin += u.velocity.x * 0.05 * ts; g.moving = false; return; }
@@ -965,7 +1102,8 @@ function step() {
     for (const t of [0, 1]) S[t].gold = Math.min(GOLD_CAP, S[t].gold + incomeOf(t) * ts / 60);
     G.special = Math.min(1, G.special + ts / (60 * 24));
     for (const k in G.cd) G.cd[k] = Math.max(0, G.cd[k] - ts);
-    aiThink(ts);
+    aiThink(ts); G.skT = Math.max(0, G.skT - ts);
+    if (G.hitQ.length) { const due = []; G.hitQ = G.hitQ.filter((q) => { q.t -= ts; if (q.t <= 0) { due.push(q); return false; } return true; }); for (const q of due) if (G.state === 'play') q.fn(); }
     for (const u of G.cats.slice()) if (!u.g.dead) updateCat(u, ts);
     for (let i = shots.length - 1; i >= 0; i--) {
       const s = shots[i]; s.t += ts; if (s.t < 0) continue;
@@ -1071,13 +1209,20 @@ function drawStar(x, y, r, rot) {
 }
 function drawCat(b) {
   const g = b.g, D = CATS[g.k], sc = D.sc * (1 + g.lane / 260);
-  const st = catState(g), atkP = g.atk > 0 ? 1 - g.atk / 14 : 0;
-  const bob = Math.abs(Math.sin(g.anim)) * (g.moving ? 1.6 : 0.3), wind = (!g.moving && g.atk <= 0 && g.cd > 0 && g.cd < 9 && !g.stun) ? (9 - g.cd) / 9 : 0,
-    lunge = g.atk > 0 ? Math.sin(atkP * Math.PI) * 5 : -wind * 4, sq = (g.squash || 0) / 8;
+  const st = catState(g), p = g.atk > 0 ? 1 - g.atk / ATK_T : 0;
+  const bob = Math.abs(Math.sin(g.anim)) * (g.moving ? 1.6 : 0.3), wind = (!g.moving && g.atk <= 0 && g.cd > 0 && g.cd < 9 && !g.stun) ? (9 - g.cd) / 9 : 0, sq = (g.squash || 0) / 8;
+  let lunge = -wind * 4, jump = 0, sx = 1, sy = 1;
+  if (g.atk > 0) {   // 크게: 뒤로 젖힘 → 번개같이 앞으로 → 반동
+    if (p < 0.22) { lunge = -9 * (p / 0.22); sx = 1 - 0.06 * (p / 0.22); sy = 1 + 0.06 * (p / 0.22); }
+    else if (p < 0.45) { const q = (p - 0.22) / 0.23; lunge = -9 + 26 * q; jump = 7 * Math.sin(q * Math.PI * 0.5); sx = 1 + 0.2 * q; sy = 1 - 0.12 * q; }
+    else { const q = (p - 0.45) / 0.55; lunge = 17 * Math.pow(1 - q, 1.6); jump = 7 * Math.pow(1 - q, 2); sx = 1 + 0.2 * (1 - q); sy = 1 - 0.12 * (1 - q); }
+  }
   if (D.glow) { c.globalAlpha = 0.18 + 0.06 * Math.sin(g.anim * 2); circ(b.position.x, b.position.y + g.lane, D.w * 0.7); c.fillStyle = D.glow; c.fill(); c.globalAlpha = 1; }
-  c.save(); c.translate(b.position.x, b.position.y + D.h / 2 - FOOT * sc + g.lane); c.rotate(g.spin); c.scale(g.face * sc * (1 + sq * 0.18), sc * (1 - sq * 0.22));
+  if (g.frenzyT > 0) { c.globalAlpha = 0.28 + 0.1 * Math.sin(g.anim * 4); circ(b.position.x, b.position.y + g.lane, D.w * 0.75); c.fillStyle = '#ff3b3b'; c.fill(); c.globalAlpha = 1; }
+  c.save(); c.translate(b.position.x, b.position.y + D.h / 2 - FOOT * sc + g.lane - jump * sc); c.rotate(g.spin); c.scale(g.face * sc * (1 + sq * 0.18) * sx, sc * (1 - sq * 0.22) * sy);
   drawSprites(g.k, st, bob, lunge);
   c.restore();
+  if (g.shieldT > 0) { c.globalAlpha = clamp(g.shieldT / 40, 0, 1) * 0.8; c.beginPath(); c.arc(b.position.x, b.position.y + g.lane + 4, D.w * 0.62, Math.PI, TAU); c.lineWidth = 4; c.strokeStyle = '#ffd84a'; c.stroke(); c.globalAlpha *= 0.25; c.fillStyle = '#ffe27a'; c.fill(); c.globalAlpha = 1; }
   if (g.hp < g.max) {
     const y = b.position.y + g.lane + D.h / 2 - (FOOT + (D.top || 24)) * sc - 10, bw = 20 + 14 * sc;
     c.fillStyle = 'rgba(36,28,46,.75)'; c.fillRect(b.position.x - bw / 2, y, bw, 5);
@@ -1145,7 +1290,7 @@ function paintIcons() {
 CATS.forEach((D, i) => {
   const el = document.createElement('button'); el.type = 'button'; el.className = 'unit';
   el.innerHTML = `<span class="key">${i + 1}</span><canvas width="88" height="72"></canvas><span class="nm">${D.name}</span><span class="rl">${D.role}</span><span class="ct"><i></i>${D.cost}</span><span class="lock">본진 Lv${D.unlock}</span><span class="cdf"></span>`;
-  el.addEventListener('click', () => { audio(); trySpawn(D.k); });
+  el.title = `${D.skill} (${Math.round(D.sp * 100)}%)`; el.addEventListener('click', () => { audio(); trySpawn(D.k); });
   deck.appendChild(el); cards.push({ el, canvas: el.querySelector('canvas'), cdf: el.querySelector('.cdf') });
 });
 const UPS = [['base', '본진 업그레이드', 'B'], ['eco', '골드 수입', 'G'], ['spd', '공격 속도', 'H'], ['atk', '공격력', 'J'], ['def', '방어력', 'K']];
