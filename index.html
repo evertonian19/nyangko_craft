@@ -50,7 +50,7 @@ button:focus-visible { outline: 3px solid var(--lamp); outline-offset: 2px; }
 #bRec { display: none; } #bRec.show { display: block; }
 #bRec::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--red); margin-right: 7px; }
 
-.stage { position: relative; aspect-ratio: 16 / 9; width: 100%; border: 4px solid var(--ink); border-radius: 18px; overflow: hidden; background: #1a1d36; container-type: inline-size; touch-action: manipulation; }
+.stage { position: relative; aspect-ratio: 16 / 9; width: min(100%, max(480px, calc((100vh - 96px) * 16 / 9))); width: min(100%, max(480px, calc((100dvh - 96px) * 16 / 9))); justify-self: center; border: 4px solid var(--ink); border-radius: 18px; overflow: hidden; background: #1a1d36; container-type: inline-size; touch-action: manipulation; }
 canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .ov { position: absolute; inset: 0; display: flex; overflow: auto; padding: 1.5cqw; background: rgba(20, 23, 43, .6); }
 .ov[hidden] { display: none; }
