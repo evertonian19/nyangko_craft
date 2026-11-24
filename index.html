@@ -193,14 +193,16 @@ CATS.forEach((D) => { D.skill = SKILL[D.k]; D.sp = SKILL_P[D.unlock]; });
 const DIFFS = [   // 난이도: 적 본진·적 고양이 체력 배율(내 쪽은 그대로)
   { name: '쉬움', hp: 0.75, inc: 0.6, desc: '적 체력 25% 적음' },
   { name: '보통', hp: 1.2, inc: 0.85, desc: '적 체력 20% 높음' },
-  { name: '어려움', hp: 1.5, inc: 0.82, desc: '적 체력 50% 높음', boss: 1 },
+  { name: '어려움', hp: 1.5, inc: 0.66, desc: '적 체력 50% 높음', boss: 1 },
 ];
 const AIP = { inc: 0.95, gold: 70, bt: 1.1, eager: 0.35 };   // 적 AI 공통 설정(수입 배율 · 시작 골드 · 본진 업그레이드 시기 · 강화 적극성)
 let diff = 1;
 try { const v = parseInt(localStorage.getItem('alleycats.diff'), 10); if (v >= 0 && v < DIFFS.length) diff = v; } catch (e) { diff = 1; }
 const hpMul = (team) => (team === 1 ? DIFFS[diff].hp : 1);
 const BASE_HP = [1000, 1500, 2000, 2500];   // 내 본진
-const TIER_HP = [800, 900, 1000, 1100];      // 적 캣타워 단계별(1단계를 부수면 2단계가 솟는다)
+const TIER_HP = [2000, 3000, 5000, 7000];      // 적 캣타워 단계별(1단계를 부수면 2단계가 솟는다)
+const TIER_INC = [1, 1.25, 1.5, 1.8];            // 적 캣타워 단계별 골드 수입 배율
+const REINF = [[], [3, 4], [3, 5, 6], [5, 7, 8]];   // 단계가 솟을 때 무료 증원
 const maxHp = (team, lv) => (team ? TIER_HP[lv - 1] : BASE_HP[lv - 1]) * hpMul(team);
 const BASE_INC = [6, 8.5, 11, 14];
 const UP_COST = { base: [120, 260, 480], eco: [90, 170, 300], spd: [90, 170, 300], atk: [90, 170, 300], def: [90, 170, 300] };
@@ -210,7 +212,7 @@ const UNLOCK_NAME = ['', '전사·마법사냥이', '용사냥이·삵', '치타
 const mkSide = (team = 0) => ({ gold: 60, baseLv: 1, hp: maxHp(team, 1), up: { eco: 0, spd: 0, atk: 0, def: 0 }, hurt: 0 });
 let S = [mkSide(0), mkSide(1)];
 const PLAYER_INC = 1.15;   // 플레이어 수입 보정(적 AI는 스테이지 배율만 적용)
-const incomeOf = (t) => BASE_INC[S[t].baseLv - 1] * (1 + 0.2 * S[t].up.eco) * (t ? G.aiMul : PLAYER_INC);
+const incomeOf = (t) => BASE_INC[S[t].baseLv - 1] * (1 + 0.2 * S[t].up.eco) * (t ? G.aiMul * TIER_INC[S[1].baseLv - 1] : PLAYER_INC);
 
 /* ---------------- 소리 (WebAudio 합성) ---------------- */
 let AC = null, master = null, recDest = null, muted = false;
@@ -685,7 +687,7 @@ function hitCat(t, dmg, dir, crit) {
 function kickCat(b, vx, vy, stun) { if (b.g.dead) return; b.g.stun = stun; Body.setVelocity(b, { x: vx, y: vy }); }
 function dmgBase(team, dmg) {
   const s = S[team]; if (G.state !== 'play' || s.inv > 0) return;
-  dmg *= 1 + Math.max(0, G.t - 70) / 35;       // 오래 끌수록 본진이 약해진다(교착 방지)
+  dmg *= 1 + Math.max(0, G.t - 120) / 35;       // 오래 끌수록 본진이 약해진다(교착 방지)
   s.hp -= dmg; s.hurt = 8;
   const cx = team ? W - BASE_CX : BASE_CX;
   addV('num', cx + rnd(-26, 26), GROUND - BASE_H[s.baseLv - 1] * 0.6, { life: 44, vy: -1.5, str: String(Math.round(dmg)), size: 28, color: team === 0 ? '#ff9b9b' : '#ffe27a' });
@@ -704,6 +706,8 @@ function nextTier() {   // 적 캣타워: 부수면 다음 단계가 새로 솟�
   }
   fx('dust', cx, GROUND - 40, 14); fx('star', cx, GROUND - 90, 10); cam.shake = Math.max(cam.shake, 20); G.slowT = Math.max(G.slowT, 24);
   pop(cx, GROUND - 170, `적 캣타워 ${s.baseLv}단계!`, '#ffcf5a', 50); if (UNLOCK_NAME[s.baseLv - 1]) throttledPop(cx, GROUND - 230, `적 ${UNLOCK_NAME[s.baseLv - 1]} 등장`, '#ff9b8a');
+  REINF[s.baseLv - 1].forEach((k, i) => later(20 + i * 22, () => { if (G.state === 'play') spawnCat(1, k, true); }));
+  later(24, () => pop(cx - 80, GROUND - 120, '적 증원 등장!', '#ff9b8a', 36));
   sfx('boom');
 }
 function killCat(u, dir) {
@@ -786,10 +790,10 @@ function onCollide(e) {
 }
 
 /* ---------------- 소환 · 강화 · 전투 ---------------- */
-function spawnCat(team, k) {
+function spawnCat(team, k, free = false) {
   const D = CATS[k], s = S[team];
-  if (s.baseLv < D.unlock || s.gold < D.cost || G.cats.filter((u) => u.g.team === team).length >= MAX_CATS) return false;
-  s.gold -= D.cost;
+  if (s.baseLv < D.unlock || (!free && s.gold < D.cost) || G.cats.filter((u) => u.g.team === team).length >= MAX_CATS) return false;
+  if (!free) s.gold -= D.cost;
   const x = (team ? W - EDGE + 24 : EDGE - 24) + rnd(-8, 8);
   const b = Bodies.rectangle(x, GROUND - D.h / 2 - 1, D.w * 0.8, D.h, { density: 0.002, friction: 0.05, frictionAir: 0.02, restitution: 0, collisionFilter: { category: CATC.unit, mask: CATC.ground } });
   Body.setInertia(b, Infinity);
