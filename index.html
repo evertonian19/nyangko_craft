@@ -110,6 +110,25 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
 #stgD { margin: 0; font-size: clamp(11px, 2cqw, 17px); color: #6b5470; }
 @media (max-width: 560px) { .btn { font-size: 15px; padding: 5px 10px; } .key { display: none; } .unit canvas { max-width: 64px; } }
 @media (prefers-reduced-motion: reduce) { .btn.ready, #rec::before { animation: none; } }
+.card.patch { width: min(1120px, 96%); max-height: 94%; display: flex; flex-direction: column; text-align: left; gap: .9cqw; padding: 1.4cqw 2.2cqw 1.6cqw; }
+.phead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.phead h2 { margin: 0; flex: 1; font-weight: 400; font-size: clamp(20px, 3.4cqw, 34px); }
+.phead .ver { font-size: clamp(12px, 1.8cqw, 16px); color: #6b5f7d; }
+.phead select { font: inherit; color: var(--ink); border: 3px solid var(--ink); border-radius: 10px; background: var(--paper); padding: 2px 6px; }
+.ptabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.ptabs .btn { font-size: clamp(12px, 1.9cqw, 16px); padding: 3px 11px; border-bottom-width: 4px; }
+.ptabs .btn[aria-pressed="true"] { background: var(--lamp); box-shadow: 0 0 0 3px var(--ink) inset; }
+.pbody { overflow: auto; font-size: clamp(11px, 1.7cqw, 15px); line-height: 1.45; display: grid; gap: 10px; align-content: start; }
+.pbody h3 { margin: 4px 0 0; font-weight: 400; font-size: 1.15em; color: #c2410c; }
+.pbody p, .pbody ul { margin: 0; } .pbody ul { padding-left: 1.2em; }
+.pscroll { overflow-x: auto; }
+.ptbl { border-collapse: collapse; width: 100%; min-width: 620px; color: var(--ink); font: inherit; }
+.ptbl th, .ptbl td { border: 2px solid var(--ink); padding: 3px 7px; text-align: center; white-space: nowrap; }
+.ptbl th { background: #e8dcc0; color: var(--ink); font-weight: 400; } .ptbl td.pl { text-align: left; }
+.ptbl .pup { color: #0b8a4a; font-weight: 700; background: #e3f7ea; } .ptbl .pdn { color: #c4271a; font-weight: 700; background: #fde6e2; }
+.ptbl tr.pick td { background: #fff1b8; } .ptbl .nw { background: #ffe27a; font-weight: 700; }
+.ptbl .rm { color: #8a8196; text-decoration: line-through; }
+.pnote { font-size: .92em; color: #6b5f7d; }
 </style>
 
 <main class="app">
@@ -118,6 +137,7 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
     <div class="tools">
       <button class="btn big" id="bSpecial" type="button"><span>참치캔 낙하 (스페이스)</span><i class="cd" id="cdBar"></i></button>
       <button class="btn" id="bSlow" type="button">슬로모션</button>
+      <button class="btn" id="bPatch" type="button">밸런스 패치표</button>
       <button class="btn" id="bMute" type="button">소리 켜짐</button>
       <button class="btn" id="bRec" type="button">녹화</button>
     </div>
@@ -131,16 +151,24 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
       <div class="card">
         <h1 class="logo"><small>밤 골목 영역 다툼</small><b><span style="--c:#4a86ff">골</span><span style="--c:#ffb02e">목</span><span style="--c:#ff5a4b">냥</span> <span style="--c:#2fae85">대</span><span style="--c:#ff8a3d">전</span></b></h1>
         <ul class="how">
-          <li>골드로 <b>길냥이 · 도적냥이 · 궁수냥이</b>를 뽑고, <b>본진을 키울수록</b> 전사 · 마법사 · 용사 · 삵 · 치타 · 표범이 해금돼요</li>
+          <li>종족(<b>고양이 · 강아지 · 도마뱀</b>)을 골라 골드로 병력을 뽑고, <b>본진을 키울수록</b> 새 유닛이 해금돼요. 강아지는 늑대로, 도마뱀은 적안 · 윤안으로 진화!</li>
           <li>골드는 병력뿐 아니라 <b>수입 · 공속 · 공격 · 방어</b> 강화에도 써요. 지금 뽑을지, 키울지가 승부처!</li>
-          <li>고양이들은 알아서 <b>앞으로 돌격</b>해요. 상대 본진 체력을 0으로 만들면 승리!</li>
+          <li>유닛들은 알아서 <b>앞으로 돌격</b>해요. 상대 본진 체력을 0으로 만들면 승리!</li>
         </ul>
         <div class="stg" role="group" aria-label="난이도"><button class="btn dif" type="button" data-d="0" aria-pressed="false">쉬움</button><button class="btn dif" type="button" data-d="1" aria-pressed="true">보통</button><button class="btn dif" type="button" data-d="2" aria-pressed="false">어려움</button></div>
         <p id="stgD"></p>
         <div class="stg" role="group" aria-label="내 종족"><b>내 종족</b><button class="btn rc" type="button" data-r="0" aria-pressed="true">고양이</button><button class="btn rc" type="button" data-r="1" aria-pressed="false">강아지</button><button class="btn rc" type="button" data-r="2" aria-pressed="false">도마뱀</button></div>
         <div class="stg" role="group" aria-label="상대 종족"><b>상대</b><button class="btn fo" type="button" data-r="0" aria-pressed="false">고양이</button><button class="btn fo" type="button" data-r="1" aria-pressed="false">강아지</button><button class="btn fo" type="button" data-r="2" aria-pressed="false">도마뱀</button><button class="btn fo" type="button" data-r="3" aria-pressed="true">랜덤</button></div>
         <p id="raceD"></p>
+        <button class="btn" id="bPatch2" type="button">밸런스 패치표 보기</button>
         <button class="btn go" id="bStart" type="button">시작하기</button>
+      </div>
+    </div>
+    <div class="ov" id="ovPatch" hidden>
+      <div class="card patch" role="dialog" aria-label="밸런스 패치표">
+        <div class="phead"><h2>밸런스 패치표</h2><select id="pSel" aria-label="패치 버전"></select><span class="ver" id="pVer"></span><button class="btn" id="bPatchX" type="button">닫기 (Esc)</button></div>
+        <div class="ptabs" id="pTabs" role="tablist"></div>
+        <div class="pbody" id="pBody"></div>
       </div>
     </div>
     <div class="ov" id="ovEnd" hidden>
@@ -181,11 +209,11 @@ const TAU = Math.PI * 2;
 /* ---------------- 규칙 데이터 ---------------- */
 // 고양이 5단계. unlock = 필요한 본진 레벨. k 가 클수록 덩치가 크고 표정이 사나워진다.
 const CATS = [
-  { k: 0, name: '길냥이', role: '기본', cost: 25, hp: 100, atk: 11, cd: 36, rng: 26, spd: 1.6, w: 44, h: 36, sc: 0.85, top: 24, unlock: 1, fx: 'claw', aiW: 3 },
-  { k: 1, name: '도적냥이', role: '암살', cost: 40, hp: 85, atk: 18, cd: 24, rng: 24, spd: 2.7, w: 46, h: 36, sc: 0.9, top: 24, unlock: 1, assassin: 1, firstMul: 2.2, ghost: 1, fx: 'x', aiW: 2 },
-  { k: 2, name: '궁수냥이', role: '원거리', cost: 45, hp: 70, atk: 14, cd: 34, rng: 230, spd: 1.4, w: 46, h: 38, sc: 0.9, top: 30, unlock: 1, ranged: 'arrow', aiW: 2.2 },
-  { k: 3, name: '전사냥이', role: '탱커', cost: 90, hp: 250, atk: 15, cd: 44, rng: 32, spd: 1.2, w: 56, h: 44, sc: 1.05, top: 30, unlock: 2, taunt: 1, dr: 0.85, fx: 'wave', aiW: 3 },
-  { k: 4, name: '마법사냥이', role: '광역 마법', cost: 110, hp: 80, atk: 22, cd: 100, rng: 300, spd: 1.3, w: 52, h: 44, sc: 1.0, top: 48, unlock: 2, ranged: 'orb', glow: '#b58bff', aura: { c: '#d6b8ff', p: 0.09 }, aiW: 2.5 },
+  { k: 0, name: '길냥이', role: '기본', cost: 25, hp: 100, atk: 10.4, cd: 36, rng: 26, spd: 1.6, w: 44, h: 36, sc: 0.85, top: 24, unlock: 1, fx: 'claw', aiW: 3 },
+  { k: 1, name: '도적냥이', role: '암살', cost: 40, hp: 85, atk: 17.1, cd: 24, rng: 24, spd: 2.7, w: 46, h: 36, sc: 0.9, top: 24, unlock: 1, assassin: 1, firstMul: 2.2, ghost: 1, fx: 'x', aiW: 2 },
+  { k: 2, name: '궁수냥이', role: '원거리', cost: 45, hp: 70, atk: 13.3, cd: 34, rng: 230, spd: 1.4, w: 46, h: 38, sc: 0.9, top: 30, unlock: 1, ranged: 'arrow', aiW: 2.2 },
+  { k: 3, name: '전사냥이', role: '탱커', cost: 90, hp: 250, atk: 14.2, cd: 44, rng: 32, spd: 1.2, w: 56, h: 44, sc: 1.05, top: 30, unlock: 2, taunt: 1, dr: 0.85, fx: 'wave', aiW: 3 },
+  { k: 4, name: '마법사냥이', role: '광역 마법', cost: 110, hp: 80, atk: 20.9, cd: 100, rng: 300, spd: 1.3, w: 52, h: 44, sc: 1.0, top: 48, unlock: 2, ranged: 'orb', glow: '#b58bff', aura: { c: '#d6b8ff', p: 0.09 }, aiW: 2.5 },
   { k: 5, name: '용사냥이', role: '대검', cost: 200, hp: 350, atk: 18, cd: 58, rng: 54, spd: 1.1, w: 80, h: 64, sc: 1.45, top: 40, unlock: 3, dr: 0.88, area: 1, big: 1, glow: '#ffd84a', aura: { c: '#ffd84a', p: 0.1 }, aiW: 2 },
   { k: 6, name: '삵', role: '출혈', cost: 140, hp: 200, atk: 27, cd: 22, rng: 28, spd: 3.0, w: 62, h: 46, sc: 1.15, top: 30, unlock: 3, bleed: 1, fx: 'claw2', aiW: 2 },
   { k: 7, name: '치타', role: '돌진', cost: 250, hp: 250, atk: 30, cd: 26, rng: 30, spd: 4.2, w: 70, h: 44, sc: 1.2, top: 24, unlock: 4, firstMul: 1.8, ghost: 1, fx: 'dash', aiW: 1.8 },
@@ -195,46 +223,45 @@ CATS.forEach((D, i) => { D.race = 0; D.idx = i; D.a = i; });
 const GEO = CATS.map((D) => ({ w: D.w, h: D.h, sc: D.sc, top: D.top }));
 const UNLOCK_BY = [1, 1, 1, 2, 2, 3, 3, 4, 4];
 const mkU = (race, idx, o) => Object.assign({ k: race * 9 + idx, race, idx, a: idx, unlock: UNLOCK_BY[idx] }, GEO[idx], o);
-// 강아지: 정예형 (비싸고 튼튼 + 보호막)
+// 강아지: 정예 근접 무리 (개 → 늑대로 진화). 도마뱀: 물량 + 괴이 변이 (3단계 적안, 4단계 윤안)
 CATS.push(
-  mkU(1, 0, { name: '시바 보병', role: '기본 근접', cost: 33, hp: 100, sh: 32, atk: 10, cd: 36, rng: 26, spd: 1.5, fx: 'claw', aiW: 3 }),
-  mkU(1, 1, { name: '닥스훈트 굴착병', role: '기습', cost: 46, hp: 80, sh: 26, atk: 15, cd: 27, rng: 24, spd: 2.4, tunnel: 1, fx: 'x', aiW: 2 }),
-  mkU(1, 2, { name: '비글 저격수', role: '장거리', cost: 55, hp: 65, sh: 23, atk: 17, cd: 54, rng: 280, spd: 1.3, ranged: 'arrow', shotCol: '#ffd84a', aiW: 2.2 }),
-  mkU(1, 3, { name: '리트리버 성기사', role: '지원 탱커', cost: 110, hp: 190, sh: 58, atk: 8, cd: 48, rng: 30, spd: 1.2, healAura: 1, fx: 'wave', aiW: 2.2 }),
-  mkU(1, 4, { name: '보더콜리 술사', role: '장판 마법', cost: 132, hp: 90, sh: 39, atk: 20, cd: 102, rng: 260, spd: 1.3, ranged: 'orb', shotCol: '#7fd4ff', glow: '#7fd4ff', aura: { c: '#bfe8ff', p: 0.09 }, aiW: 2.4 }),
-  mkU(1, 5, { name: '셰퍼드 기갑견', role: '중장 탱커', cost: 220, hp: 400, sh: 104, atk: 17, cd: 60, rng: 50, spd: 1.0, dr: 0.8, noKick: 1, taunt: 1, fx: 'wave', aiW: 2 }),
-  mkU(1, 6, { name: '허스키 썰매대', role: '기동 돌격', cost: 165, hp: 210, sh: 58, atk: 24, cd: 30, rng: 30, spd: 3.2, slow: 1, fx: 'claw2', aiW: 2 }),
-  mkU(1, 7, { name: '그레이하운드', role: '초고속 암살', cost: 286, hp: 230, sh: 78, atk: 30, cd: 27, rng: 30, spd: 4.6, firstMul: 2, ghost: 1, fx: 'dash', aiW: 1.8 }),
-  mkU(1, 8, { name: '세인트버나드', role: '보스 수호자', cost: 484, hp: 680, sh: 208, atk: 38, cd: 66, rng: 60, spd: 1.1, dr: 0.85, area: 1, big: 1, guardAura: 1, glow: '#9ec9ff', aura: { c: '#cfe4ff', p: 0.1 }, aiW: 1.5 }),
-  // 도마뱀: 물량형 (싸고 빠르고 체력 재생)
-  mkU(2, 0, { name: '새끼 도마뱀 ×2', role: '물량 근접', cost: 39, hp: 40, atk: 6, cd: 24, rng: 22, spd: 2.6, twin: 1, fx: 'claw', aiW: 3.5 }),
-  mkU(2, 1, { name: '카멜레온', role: '은신 기습', cost: 54, hp: 60, atk: 16, cd: 30, rng: 24, spd: 2.0, stealth: 1, firstMul: 1.8, fx: 'x', aiW: 2 }),
-  mkU(2, 2, { name: '침뱉이 도마뱀', role: '산성 원거리', cost: 50, hp: 50, atk: 10, cd: 33, rng: 200, spd: 1.6, ranged: 'orb', shotCol: '#a6ff4d', shotFx: 'acid', aiW: 2.2 }),
-  mkU(2, 3, { name: '이구아나 갑각병', role: '재생 탱커', cost: 107, hp: 260, atk: 12, cd: 42, rng: 28, spd: 1.3, regenMul: 2, fx: 'wave', aiW: 3 }),
-  mkU(2, 4, { name: '독도마뱀 술사', role: '독 광역', cost: 136, hp: 100, atk: 16, cd: 60, rng: 220, spd: 1.4, ranged: 'orb', shotCol: '#b4ff5a', shotFx: 'poison', glow: '#b4ff5a', aura: { c: '#d8ff9a', p: 0.09 }, aiW: 2.4 }),
-  mkU(2, 5, { name: '바실리스크', role: '도약 기동', cost: 192, hp: 180, atk: 24, cd: 24, rng: 28, spd: 3.6, leap: 1, fx: 'claw2', aiW: 2.2 }),
-  mkU(2, 6, { name: '가시도마뱀', role: '반사 탱커', cost: 230, hp: 300, atk: 14, cd: 48, rng: 28, spd: 1.3, reflect: 0.3, fx: 'wave', aiW: 2.2 }),
-  mkU(2, 7, { name: '코모도 왕도마뱀', role: '보스 포식자', cost: 522, hp: 480, atk: 44, cd: 60, rng: 55, spd: 1.2, bleed: 1, area: 1, big: 1, glow: '#9ad94a', aura: { c: '#c8ff7a', p: 0.1 }, aiW: 1.5 }),
-  mkU(2, 8, { name: '화염 드래곤 도마뱀', role: '원거리 화염', cost: 596, hp: 320, atk: 30, cd: 72, rng: 240, spd: 1.2, ranged: 'orb', shotCol: '#ff8a3a', shotFx: 'fire', shotRad: 110, glow: '#ff8a3a', aura: { c: '#ffb36a', p: 0.12 }, aiW: 1.5 }),
+  mkU(1, 0, { name: '시바 보병', role: '기본 근접', cost: 33, hp: 115, sh: 37, atk: 10, cd: 36, rng: 26, spd: 1.5, fx: 'claw', aiW: 3 }),
+  mkU(1, 1, { name: '진돗개 파수견', role: '초반 탱커', cost: 50, hp: 161, sh: 46, atk: 9, cd: 40, rng: 28, spd: 1.3, dr: 0.85, taunt: 1, fx: 'wave', aiW: 2.4, w: 50, h: 40, sc: 0.95 }),
+  mkU(1, 2, { name: '비글 짖음꾼', role: '음파 사격', cost: 55, hp: 80, sh: 29, atk: 11, cd: 48, rng: 140, spd: 1.4, ranged: 'orb', shotCol: '#bfe8ff', glow: '#bfe8ff', aiW: 2.2 }),
+  mkU(1, 3, { name: '리트리버 구조견', role: '지원', cost: 110, hp: 218, sh: 67, atk: 8, cd: 48, rng: 30, spd: 1.2, healAura: 1, fx: 'wave', aiW: 2.2 }),
+  mkU(1, 4, { name: '셰퍼드 군견', role: '중장 탱커', cost: 150, hp: 345, sh: 92, atk: 15, cd: 54, rng: 40, spd: 1.1, dr: 0.8, noKick: 1, taunt: 1, fx: 'wave', aiW: 2.4, w: 56, h: 44, sc: 1.05 }),
+  mkU(1, 5, { name: '늑대개 추적자', role: '반늑대 사냥꾼', cost: 165, hp: 242, sh: 67, atk: 25.9, cd: 30, rng: 30, spd: 3.2, slow: 1, bleed: 1, fx: 'claw2', aiW: 2 }),
+  mkU(1, 6, { name: '회색늑대 우두머리', role: '무리 지휘', cost: 200, hp: 345, sh: 104, atk: 21.6, cd: 40, rng: 34, spd: 1.6, packAura: 1, fx: 'claw2', w: 66, h: 48, sc: 1.18, aura: { c: '#cfe4ff', p: 0.06 }, aiW: 2 }),
+  mkU(1, 7, { name: '그림자 늑대', role: '초고속 암살', cost: 286, hp: 264, sh: 90, atk: 32.4, cd: 27, rng: 30, spd: 4.6, firstMul: 2, ghost: 1, fx: 'dash', aiW: 1.8 }),
+  mkU(1, 8, { name: '달빛 알파 늑대', role: '보스 수호자', cost: 484, hp: 782, sh: 239, atk: 41, cd: 66, rng: 60, spd: 1.1, dr: 0.85, area: 1, big: 1, guardAura: 1, glow: '#9ec9ff', aura: { c: '#cfe4ff', p: 0.1 }, aiW: 1.5 }),
+  mkU(2, 0, { name: '새끼 도마뱀 ×2', role: '물량 근접', cost: 39, hp: 40, atk: 5.5, cd: 24, rng: 22, spd: 2.6, twin: 1, fx: 'claw', aiW: 3.5 }),
+  mkU(2, 1, { name: '산성 침뱉이', role: '산성 원거리', cost: 50, hp: 50, atk: 9.2, cd: 33, rng: 200, spd: 1.6, ranged: 'orb', shotCol: '#a6ff4d', shotFx: 'acid', aiW: 2.2 }),
+  mkU(2, 2, { name: '알폭탄 도마뱀', role: '자폭', cost: 35, hp: 45, atk: 36.8, cd: 20, rng: 22, spd: 2.4, suicide: 1, blast: 70, fx: 'claw', w: 38, h: 32, sc: 0.8, aiW: 2.4 }),
+  mkU(2, 3, { name: '이구아나 갑각병', role: '재생 탱커', cost: 107, hp: 260, atk: 11, cd: 42, rng: 28, spd: 1.3, regenMul: 2, fx: 'wave', aiW: 3 }),
+  mkU(2, 4, { name: '카멜레온', role: '은신 암살', cost: 70, hp: 80, atk: 16.6, cd: 30, rng: 24, spd: 2.0, stealth: 1, firstMul: 2.2, fx: 'x', w: 48, h: 36, sc: 0.95, aiW: 2 }),
+  mkU(2, 5, { name: '적안 바실리스크', role: '도약 기동', cost: 192, hp: 180, atk: 24, cd: 24, rng: 28, spd: 3.6, leap: 1, fx: 'claw2', glow: '#ff4a4a', aura: { c: '#ff9a9a', p: 0.07 }, aiW: 2.2 }),
+  mkU(2, 6, { name: '적안 독술사', role: '독 광역', cost: 170, hp: 130, atk: 18, cd: 60, rng: 220, spd: 1.4, ranged: 'orb', shotCol: '#b4ff5a', shotFx: 'poison', glow: '#ff4a4a', aura: { c: '#ffb0b0', p: 0.09 }, aiW: 2.4 }),
+  mkU(2, 7, { name: '윤안 코모도', role: '보스 포식자', cost: 522, hp: 480, atk: 44, cd: 60, rng: 55, spd: 1.2, bleed: 1, area: 1, big: 1, reborn: 1, glow: '#b58bff', aura: { c: '#d6b8ff', p: 0.1 }, aiW: 1.5 }),
+  mkU(2, 8, { name: '윤안 화염 드래곤', role: '원거리 화염', cost: 596, hp: 320, atk: 30, cd: 72, rng: 240, spd: 1.2, ranged: 'orb', shotCol: '#ff8a3a', shotFx: 'fire', shotRad: 110, reborn: 1, glow: '#b58bff', aura: { c: '#d6b8ff', p: 0.12 }, aiW: 1.5 }),
 );
 const RACES = [
   { name: '고양이', desc: '균형형 · 강화 비용 −10%', max: 24, cdMul: 1, special: '참치캔 낙하', unlockNames: ['', '전사·마법사냥이', '용사냥이·삵', '치타·표범'] },
-  { name: '강아지', desc: '정예형 · 보호막(3초 안 맞으면 회복) · 유닛 18', max: 18, cdMul: 1.2, special: '수호 결계', unlockNames: ['', '리트리버·보더콜리', '셰퍼드·허스키', '그레이하운드·세인트버나드'] },
-  { name: '도마뱀', desc: '물량형 · 체력 재생 · 소환 빠름 · 유닛 32', max: 32, cdMul: 0.7, special: '산란 폭주', unlockNames: ['', '이구아나·독술사', '바실리스크·가시도마뱀', '코모도·드래곤'] },
+  { name: '강아지', desc: '정예형 · 보호막(3초 안 맞으면 회복) · 개에서 늑대로 진화 · 유닛 18', max: 18, cdMul: 1.2, shRegen: 0.1, special: '수호 결계', unlockNames: ['', '리트리버·셰퍼드', '늑대개·우두머리 늑대', '그림자 늑대·달빛 알파'] },
+  { name: '도마뱀', desc: '물량형 · 체력 재생 · 자폭 · 3단계 적안 / 4단계 윤안 · 유닛 32', max: 32, cdMul: 0.7, regen: 0.008, special: '산란 폭주', unlockNames: ['', '이구아나·카멜레온', '적안 바실리스크·독술사', '윤안 코모도·드래곤'] },
 ];
 const ATK_T = 22;   // 공격 모션 길이(프레임)
 const SKILL = ['냥냥 연타', '그림자 습격', '화살비', '방패 강타', '썬더볼트', '성검 낙뢰', '피의 광란', '섬광 돌진', '흑염 대참격',
-  '충성 돌격', '땅굴 기습', '관통탄', '치유의 빛', '염동 폭풍', '철벽 진형', '눈보라 돌진', '섬광 연격', '수호신의 포효',
-  '물어뜯기', '위장 기습', '산성 웅덩이', '껍질 웅크리기', '독구름', '도약 강습', '가시 폭발', '맹독 포식', '화염 브레스'];
+  '충성 돌격', '파수 포효', '공명 짖음', '치유의 빛', '철벽 진형', '추격 돌진', '무리의 울음', '섬광 연격', '만월의 포효',
+  '물어뜯기', '산성 웅덩이', '연쇄 폭발', '껍질 웅크리기', '위장 기습', '도약 강습', '환각 독구름', '맹독 포식', '화염 브레스'];
 const SKILL_COL = ['#ffb347', '#b58bff', '#9be37a', '#ffd84a', '#c9a5ff', '#fff3a0', '#ff5a4b', '#ffe27a', '#ff3b3b',
-  '#ffd9a0', '#d9b27a', '#ffe27a', '#9bffb0', '#7fd4ff', '#cfd6e8', '#bfe8ff', '#ffffff', '#9ec9ff',
-  '#9be37a', '#7dff9b', '#b6ff4d', '#6bd5a9', '#8bff4d', '#ffb347', '#c8ff7a', '#9ad94a', '#ff8a3a'];
+  '#ffd9a0', '#cfd6e8', '#bfe8ff', '#9bffb0', '#cfd6e8', '#bfe8ff', '#ffe9a0', '#ffffff', '#9ec9ff',
+  '#9be37a', '#b6ff4d', '#ffb347', '#6bd5a9', '#7dff9b', '#ffb347', '#d8a0ff', '#c8a0ff', '#ff8a3a'];
 const SKILL_P = [0, 0.05, 0.10, 0.15, 0.20];   // 본진 해금 레벨별 패시브 스킬 확률
 CATS.forEach((D) => { D.skill = SKILL[D.k]; D.sp = SKILL_P[D.unlock]; });
 const DIFFS = [   // 난이도: 적 본진·적 고양이 체력 배율(내 쪽은 그대로)
-  { name: '쉬움', hp: 0.75, inc: 0.6, desc: '적 체력 25% 적음' },
-  { name: '보통', hp: 1.2, inc: 0.85, desc: '적 체력 20% 높음' },
-  { name: '어려움', hp: 1.5, inc: 0.66, desc: '적 체력 50% 높음', boss: 1 },
+  { name: '쉬움', hp: 1, inc: 0.6, desc: '적 체력 25% 적음' },
+  { name: '보통', hp: 1, inc: 0.85, desc: '적 체력 20% 높음' },
+  { name: '어려움', hp: 2, inc: 0.66, desc: '적 체력 50% 높음', boss: 1 },
 ];
 const AIP = { inc: 0.95, gold: 70, bt: 1.1, eager: 0.35 };   // 적 AI 공통 설정(수입 배율 · 시작 골드 · 본진 업그레이드 시기 · 강화 적극성)
 let diff = 1;
@@ -334,10 +361,10 @@ const FURS = [   // 직업별 털색 3종 (소환 때 무작위): [기본, 배/�
 ].map((list) => list.map(mkFur));
 const coats = (m, b, sp) => [[m, b, sp, b], [mix(m, DK, 0.25), b, sp, b], [mix(m, '#ffffff', 0.3), '#ffffff', sp, '#ffffff']].map(mkFur);
 FURS.push(
-  ...[['#d9904a', '#fff1d8', '#a8642a'], ['#8a5632', '#d9b48a', '#4a2c18'], ['#c8863e', '#fff5e6', '#3a2a1c'], ['#e6b85c', '#fff0c4', '#b88a30'], ['#3a3a46', '#ffffff', '#1c1c26'],
-    ['#a8743a', '#e0c090', '#2a1c10'], ['#9aa6b8', '#ffffff', '#46546e'], ['#b8b0a4', '#ece6dc', '#6a645a'], ['#f0e6d8', '#ffffff', '#b8552a']].map(([m, b, sp]) => coats(m, b, sp)),
-  ...[['#7fcf5a', '#d8f2a8', '#3e8a2e'], ['#46b98a', '#c8f2dc', '#1e7a5c'], ['#a8c83a', '#eef5a8', '#5e7a1c'], ['#5aa84a', '#c8e8a0', '#2e6a2a'], ['#8a5ac8', '#e0c8f8', '#4a2a7a'],
-    ['#3aa8a0', '#c8f0e8', '#1e6a68'], ['#b88a4a', '#f0dcb0', '#6a4a1c'], ['#7a7058', '#c8bfa0', '#3a3424'], ['#d8503a', '#ffd8a0', '#7a1e14']].map(([m, b, sp]) => coats(m, b, sp)));
+  ...[['#d9904a', '#fff1d8', '#a8642a'], ['#f4eee2', '#ffffff', '#c8a878'], ['#c8863e', '#fff5e6', '#3a2a1c'], ['#e6b85c', '#fff0c4', '#b88a30'], ['#b8864a', '#e0c090', '#1c1410'],
+    ['#9a948a', '#e0dccf', '#4a4640'], ['#7a8088', '#dfe4ea', '#3a3e46'], ['#4c4c6a', '#8a8aac', '#1c1c2a'], ['#e8ecf4', '#ffffff', '#8a98b8']].map(([m, b, sp]) => coats(m, b, sp)),
+  ...[['#7fcf5a', '#d8f2a8', '#3e8a2e'], ['#a8c83a', '#eef5a8', '#5e7a1c'], ['#e0a83a', '#fff0b8', '#a0501c'], ['#5aa84a', '#c8e8a0', '#2e6a2a'], ['#46b98a', '#c8f2dc', '#1e7a5c'],
+    ['#c85a4a', '#f8d8b0', '#6a1e1e'], ['#8a5ac8', '#e0c8f8', '#4a2a7a'], ['#7e6cb4', '#d8ccf2', '#3a2870'], ['#6a54b0', '#d0bef6', '#2a1a68']].map(([m, b, sp]) => coats(m, b, sp)));
 const furOf = (k, v, race = 0) => FURS[race * 9 + k][(v || 0) % 3];
 const EYE = [   // 홍채: [위(진함), 중간, 아래(밝음)]
   ['#8a4a10', '#e8941a', '#ffd86a'], ['#8a6a00', '#f2d02a', '#fff59a'], ['#2c6a3a', '#5cbf5a', '#c8f09a'],
@@ -350,7 +377,8 @@ const TORSO = [{ rx: 13 }, { rx: 12 }, { rx: 12.5 }, { rx: 14 }, { rx: 13 }, { r
 const ARTSC = 1.75;   // 그림 확대 배율(발바닥 기준)
 const TAILC = [{ n: 8, len: 22, curl: 1.15 }, { n: 8, len: 22, curl: 1.1 }, { n: 8, len: 22, curl: 1.15 }, { n: 8, len: 22, curl: 1.1 }, { n: 8, len: 24, curl: 1.0 }, { n: 8, len: 24, curl: 1.2 }, { n: 4, len: 9, curl: 0.5 }, { n: 9, len: 32, curl: 0.55 }, { n: 9, len: 29, curl: 0.9 }];
 const TOP = [27, 29, 31, 30, 46, 32, 28, 27, 28];
-CATS.forEach((D) => { D.top = (FOOT + TOP[D.a]) * ARTSC - FOOT; });
+const TOPX = { 13: 31, 15: 30, 17: 33, 20: 26, 22: 28, 24: 34, 26: 34 };
+CATS.forEach((D) => { D.top = (FOOT + (TOPX[D.k] ?? TOP[D.a])) * ARTSC - FOOT; });
 const GOLD = '#e0b13a', PINK = '#ff9bb3';
 const LOD = { on: false };   // 고양이가 많을 때는 음영(클립)을 생략해 프레임을 지킨다
 // 현재 path 를 base 색으로 칠하고 셀 셰이딩(위 밝은 띠 / 아래 어두운 띠)을 얹은 뒤 얇은 외곽선을 긋는다.
@@ -380,6 +408,7 @@ function limb(x0, y0, x1, y1, w0, w1, col) { const dx = x1 - x0, dy = y1 - y0, n
 
 // 꼬리: 굵고 짧게 말려 올라가고 끝에 무늬색. 마디가 위상 tw 로 살랑거린다.
 function pTail(k, s) {
+  if (s.race) return pTailX(k, s);
   const F = furOf(k, s.coat, s.race), T = TORSO[k], TC = TAILC[k], ph = s.tw, mv = s.moving ? 1 : 0;
   const L = [], R = [], seg = TC.len * 0.8 / TC.n; let x = -T.rx * 0.9, y = 12; const pts = [[x, y, 0]];
   for (let i = 1; i <= TC.n; i++) {
@@ -403,6 +432,7 @@ function pCape(k, s) {
 }
 // 다리: 아주 짧고 통통한 발(굵은 외곽선, 단색). 걸을 때 엇갈려 통통 걷는다.
 function pLegs(k, s, far) {
+  if (s.race === 2) return pLegsL(k, s, far);
   const F = furOf(k, s.coat, s.race), mv = s.moving ? 1 : 0, ph = s.t * 0.9, hx = far ? -6 : 6, phase = far ? Math.PI : 0;
   const sw = Math.sin(ph + phase), lift = Math.max(0, Math.cos(ph + phase)) * 3 * mv, fx_ = hx + sw * 4 * mv, fy = FOOT - 3 - lift;
   limb(hx, 14.5, fx_, fy - 1, 4.6, 4.2, far ? F.sh : F.m);
@@ -425,22 +455,23 @@ function armPose(k, s, front) {
   else { hx = sx + 3 + Math.sin(ph) * 3 * mv; hy = 14 - Math.max(0, Math.cos(ph + Math.PI)) * mv; }
   return { sx, sy, hx, hy, ang, sw };
 }
-function drawArm(k, s, front) {
-  const F = furOf(k, s.coat, s.race), P = armPose(k, s, front), col = front ? F.m : F.sh;
+function drawArm(k, s, front, pk = k) {
+  const F = furOf(k, s.coat, s.race), P = armPose(pk, s, front), col = front ? F.m : F.sh;
   const [ex, ey, hx, hy] = ik(P.sx, P.sy, P.hx, P.hy, 6.4, 6.4, 1);
   limb(P.sx, P.sy, ex, ey, 3.6, 3.2, col); limb(ex, ey, hx, hy, 3.2, 3, col);
   circ(hx, hy, 3.6); shade(front ? F.m : F.sh);
-  if (front && [0, 6, 7, 8].includes(k) && P.sw > 0.15) for (const q of [-2, 0, 2]) { c.beginPath(); c.moveTo(hx + 1.8, hy + q); c.lineTo(hx + 8.4, hy + q * 1.6 - 0.8); c.lineTo(hx + 1.8, hy + q + 1.4); c.closePath(); c.fillStyle = '#ffffff'; c.fill(); stk(1.2); }
+  if (front && [0, 6, 7, 8].includes(pk) && P.sw > 0.15) for (const q of [-2, 0, 2]) { c.beginPath(); c.moveTo(hx + 1.8, hy + q); c.lineTo(hx + 8.4, hy + q * 1.6 - 0.8); c.lineTo(hx + 1.8, hy + q + 1.4); c.closePath(); c.fillStyle = '#ffffff'; c.fill(); stk(1.2); }
 }
-function pArmB(k, s) { withLean(s, () => drawArm(k, s, false)); }
-function pArmF(k, s) {
+function pArmB(k, s, pk = k) { withLean(s, () => drawArm(k, s, false, pk)); }
+function pArmF(k, s, pk = k) {
   withLean(s, () => {
-    if (k === 3) { const P = armPose(k, s, false); circ(P.hx + 2.5, P.hy + 1, 9); shade(TEAM[s.team].main); circ(P.hx + 2.5, P.hy + 1, 3.6); shade('#fff6e0'); }
-    drawArm(k, s, true);
+    if (pk === 3) { const P = armPose(pk, s, false); circ(P.hx + 2.5, P.hy + 1, 9); shade(TEAM[s.team].main); circ(P.hx + 2.5, P.hy + 1, 3.6); shade('#fff6e0'); }
+    drawArm(k, s, true, pk);
   });
 }
 // 몸: 통통한 식빵/떡 모양 + 밝은 배. 옷은 없고 무늬만.
 function pBody(k, s) {
+  if (s.race) return pBodyX(k, s);
   withLean(s, () => {
     const F = furOf(k, s.coat, s.race), T = TORSO[k], rx = T.rx;
     const tp = () => { c.beginPath(); c.ellipse(0, 9.8, rx, 9, 0, 0, TAU); };
@@ -470,6 +501,8 @@ function dotEye(x, y, side, m, blink) {
   ell(x, y, r, r * 1.1); c.fillStyle = OUT; c.fill();
 }
 function pHead(k, s) {
+  if (s.race === 1) return pHeadDog(k, s);
+  if (s.race === 2) return pHeadLizard(k, s);
   withLean(s, () => {
     const F = furOf(k, s.coat, s.race), m = s.mood, T = TEAM[s.team], fw = Math.sin(s.tw * 1.1) * 2, e = k >= 7 ? 0.8 : 1;
     c.save(); c.translate(3, -6);
@@ -538,7 +571,8 @@ const fillG = (g, flat, lw = 1.8) => { c.fillStyle = (!LOD.on && g) ? g : flat; 
 const glowAt = (x, y, r, col, a) => { c.globalAlpha = a * 0.45; circ(x, y, r * 1.7); c.fillStyle = col; c.fill(); c.globalAlpha = a; circ(x, y, r); c.fill(); c.globalAlpha = 1; };
 const gemAt = (x, y, r, col, hl = '#ffffff') => { circ(x, y, r); c.fillStyle = col; c.fill(); stk(1.2); c.fillStyle = hl; c.globalAlpha = 0.85; c.fillRect(x - r * 0.5, y - r * 0.55, r * 0.6, r * 0.5); c.globalAlpha = 1; };
 const TRC = { 1: '#c9a5ff', 2: '#9bffb0', 3: '#9ec9ff', 4: '#d6b8ff', 5: '#ffe27a' };   // 무기별 휘두름 궤적 색
-function pWeapon(k, s) {
+function pWeapon(k, s, pk = k) {
+  if (s.race) return pWeaponX(k, s, pk);
   const P = armPose(k, s, true), sw = P.sw, fxOn = !LOD.on && s.mood !== 2;
   withLean(s, () => {
     if (s.atkP > 0.2 && s.atkP < 0.78 && SWR[k]) {
@@ -605,20 +639,223 @@ function pWeapon(k, s) {
     c.restore();
   });
 }
-function catParts(k) {
-  const P = [];
-  if (k === 5) P.push({ n: 'cape', ox: -12, oy: 8, w: 22, h: 20, draw: (s) => pCape(k, s) });
+/* ---------------- 강아지·도마뱀 전용 그림 (몸·팔·다리 틀은 고양이와 같고 머리·꼬리·몸 무늬·눈·소품이 다르다) ---------------- */
+const RXD = [13, 13, 12, 14, 14.5, 13, 14.5, 12.5, 16], RXL = [11, 11, 10.5, 13.5, 12, 13, 12, 14.5, 15];
+const POSE = { 1: [0, 3, 2, 0, 0, 6, 6, 7, 8], 2: [0, 2, 0, 0, 0, 6, 4, 8, 2] };   // 팔·무기 자세는 고양이 번호를 빌려 쓴다
+const TAILX = {
+  1: [{ n: 8, len: 20, curl: 2.3, w: 3.8, tip: 1 }, { n: 8, len: 21, curl: 2.4, w: 3.8, tip: 1 }, { n: 8, len: 20, curl: 1.6, w: 3.6, tip: 1 }, { n: 8, len: 26, curl: 0.9, w: 5.2, tip: 1 }, { n: 8, len: 26, curl: 0.15, w: 5, tip: 0 },
+    { n: 9, len: 28, curl: 0.1, w: 5.4, tip: 1 }, { n: 9, len: 30, curl: 0.0, w: 5.8, tip: 1 }, { n: 9, len: 32, curl: -0.15, w: 5.4, tip: 0 }, { n: 10, len: 36, curl: 0.2, w: 7, tip: 1 }],
+  2: [{ n: 10, len: 30, curl: 1.0, w: 4.2, tp: 0.7 }, { n: 10, len: 32, curl: 0.9, w: 4.4, tp: 0.7 }, { n: 8, len: 22, curl: 1.2, w: 4, tp: 0.7 }, { n: 11, len: 38, curl: 0.5, w: 6, tp: 0.75, spk: 1 }, { n: 12, len: 42, curl: 1.8, w: 4.6, tp: 0.7 },
+    { n: 11, len: 40, curl: 0.6, w: 5.6, tp: 0.75, spk: 1 }, { n: 11, len: 36, curl: 0.8, w: 5, tp: 0.75, spk: 1 }, { n: 12, len: 48, curl: 0.35, w: 7, tp: 0.78, spk: 1 }, { n: 12, len: 46, curl: 0.7, w: 6.2, tp: 0.78, spk: 1 }],
+};
+function pTailX(k, s) {
+  const F = furOf(k, s.coat, s.race), TC = TAILX[s.race][k], rx = (s.race === 1 ? RXD : RXL)[k], ph = s.tw, mv = s.moving ? 1 : 0;
+  const L = [], R = [], seg = TC.len * 0.8 / TC.n; let x = -rx * 0.9, y = 12; const pts = [[x, y, 0]];
+  for (let i = 1; i <= TC.n; i++) {
+    const f = i / TC.n, ang = Math.PI - 0.45 + TC.curl * f * (mv ? 0.8 : 1) * 1.15 + Math.sin(ph - i * 0.75) * 0.34 * f;
+    x += Math.cos(ang) * seg; y += Math.sin(ang) * seg; pts.push([x, y, f]);
+  }
+  const tp = TC.tp || 0.25, norm = [];
+  for (let i = 0; i < pts.length; i++) {
+    const [px_, py_, f] = pts[i], [qx, qy] = pts[Math.min(i + 1, pts.length - 1)], [rx_, ry_] = pts[Math.max(i - 1, 0)], dx = qx - rx_, dy = qy - ry_, n = Math.hypot(dx, dy) || 1, w = TC.w * (1 - tp * f);
+    L.push([px_ - dy / n * w, py_ + dx / n * w]); R.push([px_ + dy / n * w, py_ - dx / n * w]); norm.push([-dy / n, dx / n, w]);
+  }
+  if (TC.spk) for (let i = 1; i < pts.length - 1; i += 2) { const [nx, ny, w] = norm[i], [px_, py_] = pts[i]; tri(px_ + nx * (w - 1) - 2.4, py_ + ny * (w - 1), px_ + nx * (w + 4.6), py_ + ny * (w + 4.6), px_ + nx * (w - 1) + 2.4, py_ + ny * (w - 1)); shade(F.s); }
+  pth(L.concat(R.reverse())); shade(F.m);
+  const [ex, ey] = pts[pts.length - 1];
+  if (TC.tip) { circ(ex, ey, TC.w * 0.8); shade(F.b); }
+  else if (s.race === 1) { circ(ex, ey, TC.w * 0.6); shade(F.s); }
+  else { circ(ex, ey, 1.8); shade(F.s); }
+}
+function pLegsL(k, s, far) {   // 도마뱀 발: 비늘 다리 + 갈고리 발톱
+  const F = furOf(k, s.coat, 2), mv = s.moving ? 1 : 0, ph = s.t * 0.9, hx = far ? -6 : 6, phase = far ? Math.PI : 0;
+  const sw = Math.sin(ph + phase), lift = Math.max(0, Math.cos(ph + phase)) * 3 * mv, fx_ = hx + sw * 4 * mv, fy = FOOT - 3 - lift;
+  limb(hx, 14.5, fx_, fy - 1, 4.4, 4, far ? F.sh : F.m);
+  ell(fx_ + 1.6, fy + 0.4, 5.6, 3); shade(far ? mix(F.s, DK, 0.1) : F.s);
+  for (const q of [-1.6, 0.4, 2.2]) pline(fx_ + 6, fy + q * 0.9, fx_ + 9, fy + q * 1.3 + 0.4, '#f4efe0', 1.5);
+}
+function pBodyX(k, s) {
+  withLean(s, () => {
+    const race = s.race, F = furOf(k, s.coat, race), rx = (race === 1 ? RXD : RXL)[k];
+    const tp = () => { c.beginPath(); c.ellipse(0, 9.8, rx, 9, 0, 0, TAU); };
+    tp(); shade(F.m);
+    c.save(); tp(); c.clip();
+    c.fillStyle = F.b; ell(4, 13, rx * 0.62, 6); c.fill();
+    if (race === 1) {
+      if (s.coat === 2) { c.fillStyle = F.s; ell(-6, 4, 6.5, 5); c.fill(); }
+      if (k >= 5) for (const x of [-9, -4, 1, 6]) { c.beginPath(); c.moveTo(x - 2, 19.5); c.lineTo(x, 13.6); c.lineTo(x + 2, 19.5); c.closePath(); c.fillStyle = F.b; c.fill(); }   // 가슴 털 뭉치
+      if (k === 7) for (const r of [4, 7, 10]) { c.beginPath(); c.arc(-4, 7, r, -2.4, 0.4); c.lineWidth = 1; c.strokeStyle = '#b58bff'; c.stroke(); }
+    } else {
+      for (const y of [11, 13.6, 16.2]) pline(-rx * 0.2, y, rx * 0.95, y, mix(F.b, DK, 0.22), 1);
+      for (const [x, y, r] of [[-9, 3, 2.2], [-3, 2, 2.4], [5, 3, 2.1], [-7, 8, 1.9], [0, 7, 1.7]]) { circ(x, y, r); c.fillStyle = F.s; c.fill(); }
+      if (k === 5 || k === 6) for (const q of [-5, -1, 3]) pline(q - 1, 1, q + 3, 11, '#d92a2a', 1.5);
+      if (k >= 7) for (const r of [4.2, 7.4, 10.6]) { c.beginPath(); c.arc(-1, 7.5, r, 0, TAU); c.lineWidth = 1.1; c.strokeStyle = '#b58bff'; c.globalAlpha = 0.85; c.stroke(); c.globalAlpha = 1; }
+    }
+    c.restore();
+    tp(); stk(1.8);
+    if (race === 1) {
+      if (k === 3) { rr(1, 5, 11, 10, 2); shade('#ffffff'); pline(6.5, 6.4, 6.5, 13.6, '#d63a3a', 2.6); pline(2.4, 10, 10.6, 10, '#d63a3a', 2.6); }
+      if (k === 4) { rr(-rx + 3, 3.4, rx * 2 - 7, 10, 3); shade('#7f879c'); for (const x of [-rx + 7, 0, rx - 8]) { circ(x, 8.4, 1.1); c.fillStyle = '#e8ecf5'; c.fill(); } pline(-rx + 5, 6.4, rx - 6, 6.4, '#a8b0c4', 1); }
+      if (k === 6) { ell(2, 0.4, rx * 0.8, 4.4); shade(F.b); for (const x of [-8, -3, 2, 7]) { tri(x - 2, 3, x, 7.6, x + 2, 3); shade(F.b); } }
+      if (k === 8) { c.beginPath(); c.ellipse(5, 9, 7.6, 2.4, 0.1, 0, TAU); shade(GOLD); for (const x of [1, 5, 9]) { tri(x - 1.4, 10, x, 13.4, x + 1.4, 10); shade('#ffd84a'); } ell(0, 1, rx * 0.9, 4.8); shade(F.b); for (const x of [-10, -5, 0, 5, 10]) { tri(x - 2.4, 3.6, x, 8.4, x + 2.4, 3.6); shade(F.b); } }
+    } else if (k === 2) {   // 알폭탄: 등에 진 알 + 타들어 가는 도화선
+      ell(-9, 6, 6.2, 7.4); shade('#f2e6c8'); pline(-12, 3, -9, 6, '#a0642f', 1.2); pline(-9, 6, -11, 9.4, '#a0642f', 1.2);
+      pline(-9, -1.2, -9, -4.6, '#6a4a2a', 1.4); px(-9, -5, '#ffb347'); if (!LOD.on) glowAt(-9, -5.4, 2.4 + Math.sin(s.tw * 3) * 0.6, '#ffb347', 0.7);
+    }
+  });
+}
+function pHeadDog(k, s) {
+  withLean(s, () => {
+    const F = furOf(k, s.coat, 1), m = s.mood, T = TEAM[s.team], fw = Math.sin(s.tw * 1.1) * 2, wolf = k >= 5, flop = k === 2 || k === 3;
+    c.save(); c.translate(3, -6);
+    // 갈기(알파)와 뺨 털(늑대)은 머리 뒤에
+    if (k === 8) { const pts = []; for (let i = 0; i <= 12; i++) { const a = Math.PI + i * (Math.PI / 12), r = i % 2 ? 22 : 15.6; pts.push([Math.cos(a) * r * 1.15, Math.sin(a) * r * 0.95 + 1]); } pth(pts); shade(F.b); }
+    if (wolf) for (const sg of [-1, 1]) { tri(sg * 16, -2, sg * 24, 3, sg * 16, 8); shade(F.m); tri(sg * 16, 4, sg * 22, 10, sg * 14, 11); shade(F.b); }
+    // 귀
+    if (flop) for (const sg of [-1, 1]) { const sw_ = Math.sin(s.tw * 1.3 + sg) * 0.8; ell(sg * 17.4, 2 + sw_, 5.4, 10.4); shade(k === 2 ? F.s : F.sh); }
+    else if (k === 4) for (const sg of [-1, 1]) { tri(sg * 14, -6, sg * 20, -12, sg * 18, -2); shade(F.m); }
+    else {
+      const ph = wolf ? 30 : k === 1 ? 21 : 20, wd = wolf ? 7.6 : 12;
+      for (const sg of [-1, 1]) { tri(sg * 15, -4, sg * (15 - wd * 0.2), -ph, sg * 3.6, -11.4); shade(F.m); tri(sg * 12.4, -7, sg * 11.6, -ph * 0.72, sg * 7, -10.4); c.fillStyle = wolf ? F.s : PINK; c.fill(); }
+    }
+    // 머리
+    rr(-17.5, -12.8, 35, 25.6, 12); shade(F.m);
+    c.save(); rr(-17.5, -12.8, 35, 25.6, 12); c.clip();
+    if (k === 4 || k === 5 || k === 6 || k === 7) { c.globalAlpha = 0.9; c.fillStyle = F.s; ell(0, -11, 17.5, 9.5); c.fill(); c.globalAlpha = 1; }
+    if (k === 2) { c.fillStyle = F.b; c.fillRect(-2.4, -13, 4.8, 12); }
+    if (k === 0) for (const sg of [-1, 1]) { ell(sg * 8.2, -5.8, 2.2, 1.5); c.fillStyle = F.b; c.fill(); }
+    if (k === 8) { c.fillStyle = F.b; ell(0, -12, 12, 6); c.fill(); }
+    c.restore();
+    rr(-17.5, -12.8, 35, 25.6, 12); stk(1.8);
+    // 주둥이 + 코
+    ell(0, 5.4, wolf ? 8.8 : 7.8, wolf ? 6.8 : 6.2); shade(F.b);
+    ell(0, 1.8, 3.2, 2.3); c.fillStyle = '#1a1420'; c.fill(); stk(1.2); px(-1, 1, '#ffffff');
+    // 눈
+    const eyeX = 8.4, eyeY = -1.6;
+    if (wolf) {
+      const col = k === 7 ? '#ff5a5a' : k === 8 ? '#bfe8ff' : '#ffd84a';
+      for (const sg of [-1, 1]) {
+        const x = sg * eyeX;
+        if (m === 2) { pline(x - 3, eyeY - 3, x + 3, eyeY + 3, OUT, 2); pline(x + 3, eyeY - 3, x - 3, eyeY + 3, OUT, 2); }
+        else if (s.blink) pline(x - 3.4, eyeY, x + 3.4, eyeY, OUT, 2.2);
+        else { c.beginPath(); c.ellipse(x, eyeY, 3.8, 2.7, sg * 0.35, 0, TAU); c.fillStyle = col; c.fill(); stk(1.4); ell(x + sg * 0.4, eyeY, 0.95, 2.2); c.fillStyle = OUT; c.fill(); if (k >= 7 && !LOD.on) glowAt(x, eyeY, 2.4, col, 0.45); }
+        pline(x - sg * 5.2, eyeY - 5.6 + (m === 3 ? 0.8 : 0), x + sg * 3.6, eyeY - 2.8, OUT, 2);
+      }
+    } else { dotEye(-eyeX, eyeY, -1, m, s.blink); dotEye(eyeX, eyeY, 1, m, s.blink); }
+    // 입
+    if (m === 3) {
+      ell(0, 8, 5.2, 4.2); c.fillStyle = '#7a1f2e'; c.fill(); stk(1.5); ell(0, 10, 2.8, 2); c.fillStyle = '#ff7a8a'; c.fill();
+      if (wolf || k >= 4) { tri(-4.4, 5.2, -2.6, 5.2, -3.5, 8.4); c.fillStyle = '#fff'; c.fill(); tri(2.6, 5.2, 4.4, 5.2, 3.5, 8.4); c.fill(); }
+    } else if (m === 1) pline(-3.6, 8.2, 3.6, 8.2, OUT, 2);
+    else if (m === 2) { pline(-3.6, 6.4, 3.6, 10, OUT, 1.8); pline(3.6, 6.4, -3.6, 10, OUT, 1.8); }
+    else {
+      c.beginPath(); c.moveTo(0, 3.6); c.lineTo(0, 6.4); c.moveTo(0, 6.4); c.quadraticCurveTo(0, 9.4, -4.6, 7.6); c.moveTo(0, 6.4); c.quadraticCurveTo(0, 9.4, 4.6, 7.6); c.lineWidth = 1.8; c.strokeStyle = OUT; c.lineCap = 'round'; c.stroke();
+      if (k === 2 || k === 0 || k === 3) { ell(0, 10, 2.2, 2.6); c.fillStyle = '#ff7a8a'; c.fill(); stk(1.2); }
+      if (wolf) { tri(-3.4, 7.2, -1.8, 7.5, -2.6, 9.8); c.fillStyle = '#fff'; c.fill(); tri(1.8, 7.5, 3.4, 7.2, 2.6, 9.8); c.fill(); }
+    }
+    // 흉터·무늬
+    if (k === 5) pline(-12, -9, -5, 1, '#d9534f', 1.6);
+    if (k === 6) { pline(-12, -9, -5, 1, '#d9534f', 1.6); pline(-10.4, -9.6, -3.4, -0.4, '#d9534f', 1.2); }
+    if (k === 7) { c.beginPath(); c.arc(0, -8, 3.2, 0.3, Math.PI - 0.3); c.lineWidth = 1.6; c.strokeStyle = '#b58bff'; c.stroke(); }
+    // 팀색 스카프
+    c.beginPath(); c.ellipse(0, 12.2, 12, 3, 0, 0, Math.PI); c.closePath(); shade(T.main); c.beginPath(); c.moveTo(-5, 13.6); c.lineTo(-10 + fw * 0.5, 21); c.lineTo(-1, 16.6); c.closePath(); shade(T.main);
+    // 소품
+    if (k === 3) { rr(-17.6, -13.6, 35.2, 5.4, 2.4); shade('#ffffff'); pline(0, -13, 0, -9, '#d63a3a', 2.4); pline(-2.2, -11, 2.2, -11, '#d63a3a', 2.4); }
+    if (k === 4) { c.beginPath(); c.ellipse(0, -7, 17.4, 8.6, 0, Math.PI, TAU); c.closePath(); shade('#8f98ae'); rr(-17.6, -9, 35.2, 3.8, 1.9); shade('#6a7288'); tri(-3.6, -15.4, 1.5, -22, 6.6, -15.4); shade(T.main); pline(-10, -13, -6, -15, '#ffffff', 1.5); }
+    if (k === 8) { c.save(); c.translate(0, -17); if (!LOD.on) glowAt(0, 0, 6, '#fff3a0', 0.5); c.beginPath(); c.arc(0, 0, 5.2, 0.5, Math.PI * 2 - 0.5); c.arc(1.8, -0.4, 4, Math.PI * 2 - 0.7, 0.7, true); c.closePath(); shade('#ffd84a'); c.restore(); }
+    c.restore();
+  });
+}
+// 눈 그리기 (도마뱀): 단계에 따라 세로 동공 → 적안(소용돌이 무늬) → 윤안(파문 고리)
+function lizEye(x, y, k, s, m, sg) {
+  const r = 5;
+  if (m === 2) { pline(x - 3, y - 3, x + 3, y + 3, OUT, 2); pline(x + 3, y - 3, x - 3, y + 3, OUT, 2); return; }
+  if (s.blink) { pline(x - 4, y, x + 4, y, OUT, 2.2); return; }
+  if (k >= 7) {   // 윤안: 보랏빛 홍채에 동심원 파문, 동공 없음
+    if (!LOD.on) glowAt(x, y, 5.4, '#b58bff', 0.4);
+    circ(x, y, r + 0.3); c.fillStyle = '#c9b6f2'; c.fill(); stk(1.5);
+    for (const q of [4.3, 3, 1.7]) { circ(x, y, q); c.lineWidth = 0.9; c.strokeStyle = '#4a2a86'; c.stroke(); }
+    circ(x, y, 0.7); c.fillStyle = '#4a2a86'; c.fill();
+  } else if (k >= 5) {   // 적안: 붉은 눈 + 검은 점 4개가 도는 무늬
+    if (!LOD.on) glowAt(x, y, 5.2, '#ff3030', 0.4);
+    circ(x, y, r + 0.3); c.fillStyle = '#d91e1e'; c.fill(); stk(1.5); circ(x, y, 3.3); c.lineWidth = 0.8; c.strokeStyle = '#6a0a0a'; c.stroke();
+    const rot = s.tw * 0.3 + (sg > 0 ? 0.6 : 0);
+    for (let i = 0; i < 4; i++) { const a = rot + i * Math.PI / 2, cx_ = x + Math.cos(a) * 2.9, cy_ = y + Math.sin(a) * 2.9; circ(cx_, cy_, 0.95); c.fillStyle = OUT; c.fill(); pline(cx_, cy_, x + Math.cos(a + 0.9) * 3.9, y + Math.sin(a + 0.9) * 3.9, OUT, 0.8); }
+    circ(x, y, 1.1); c.fillStyle = OUT; c.fill();
+  } else {   // 평범한 파충류 눈: 노란 홍채 + 세로 동공
+    circ(x, y, r - 0.4); c.fillStyle = k === 4 ? '#ffb347' : '#e8e04a'; c.fill(); stk(1.5); ell(x, y, 1.2, 3.5); c.fillStyle = OUT; c.fill();
+  }
+}
+function pHeadLizard(k, s) {
+  withLean(s, () => {
+    const F = furOf(k, s.coat, 2), m = s.mood, T = TEAM[s.team], fw = Math.sin(s.tw * 1.1) * 2, psy = k >= 5;
+    c.save(); c.translate(3, -6);
+    // 뒤통수 볏
+    const nSp = k < 3 ? 3 : k < 5 ? 4 : 5;
+    for (let i = 0; i < nSp; i++) { const x = -10 + i * (20 / (nSp - 1)), hh = 7 + (i % 2) * 3 + (psy ? 4 : 0) + (k === 4 ? 2 : 0); tri(x - 3, -8, x, -8 - hh, x + 3, -8); shade(F.s); }
+    if (k === 8) for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * 11, -8); c.quadraticCurveTo(sg * 20, -16, sg * 16, -27); c.quadraticCurveTo(sg * 14, -17, sg * 8, -10); c.closePath(); shade('#efe8f6'); }
+    // 눈 알이 튀어나온 납작한 머리
+    rr(-18.5, -10.5, 37, 22, 10); shade(F.m);
+    c.save(); rr(-18.5, -10.5, 37, 22, 10); c.clip();
+    c.fillStyle = F.b; ell(0, 9, 16, 5.5); c.fill();
+    for (const [x, y, r] of [[-12, -4, 1.6], [-5, -8, 1.4], [6, -7, 1.6], [13, -3, 1.4], [-14, 4, 1.2], [0, -4, 1.1]]) { circ(x, y, r); c.fillStyle = F.s; c.fill(); }
+    c.restore();
+    rr(-18.5, -10.5, 37, 22, 10); stk(1.8);
+    for (const sg of [-1, 1]) { circ(sg * 9.6, -6.6, 6.4); shade(F.m); }
+    lizEye(-9.6, -6.6, k, s, m, -1); lizEye(9.6, -6.6, k, s, m, 1);
+    if (k === 7) for (const sg of [-1, 1]) pline(sg * 15, -13.4, sg * 4.4, -9.4, OUT, 2.6);
+    // 콧구멍
+    for (const sg of [-1, 1]) { ell(sg * 3.6, 2, 0.9, 1.3); c.fillStyle = OUT; c.fill(); }
+    // 입: 단계가 오를수록 찢어진 사이코 미소
+    if (m === 3) {
+      ell(0, 7.6, 8, 4.6); c.fillStyle = '#7a1f2e'; c.fill(); stk(1.5);
+      for (const x of [-6, -2.4, 1.2, 4.8]) { tri(x - 1.3, 4.6, x + 1.3, 4.6, x, 7.4); c.fillStyle = '#fff'; c.fill(); }
+      ell(0, 10, 3, 1.6); c.fillStyle = '#ff7a8a'; c.fill();
+    } else if (m === 2) { pline(-6, 5.6, 6, 9.6, OUT, 1.8); pline(6, 5.6, -6, 9.6, OUT, 1.8); }
+    else if (psy) {
+      c.beginPath(); c.moveTo(-13.4, 4); c.quadraticCurveTo(0, 13.4, 13.4, 4); c.lineWidth = 2.1; c.strokeStyle = OUT; c.lineCap = 'round'; c.stroke();
+      for (const x of [-10.4, -7, -3.6, -0.2, 3.2, 6.6, 10]) { const yc = 4 + 4.5 * (1 - (x / 13) * (x / 13)); tri(x - 1.5, yc + 0.3, x + 1.5, yc + 0.3, x, yc + 3.2); c.fillStyle = '#fff'; c.fill(); }
+      pline(-13.4, 4, -15, 1.8, OUT, 1.6); pline(13.4, 4, 15, 1.8, OUT, 1.6);
+    } else { c.beginPath(); c.moveTo(-9, 5.6); c.quadraticCurveTo(0, 9.4, 9, 5.6); c.lineWidth = 1.9; c.strokeStyle = OUT; c.lineCap = 'round'; c.stroke(); if (k === 4) { ell(5, 8.4, 1.6, 4.2); shade('#ff7a8a'); } }
+    // 소품·무늬
+    if (k >= 7) { c.globalAlpha = 0.9; for (const r of [1.6, 3, 4.4]) { c.beginPath(); c.arc(0, -3, r, Math.PI * 1.15, Math.PI * 1.85); c.lineWidth = 1; c.strokeStyle = '#b58bff'; c.stroke(); } c.globalAlpha = 1; }
+    if (k === 8) for (const sg of [-1, 1]) { tri(sg * 13, -9, sg * 20, -12, sg * 17, -22); shade('#efe8f6'); }
+    if (k === 2) { rr(-17.6, -11.6, 35.2, 4, 2); shade('#d9422f'); pline(-14, -9.6, 14, -9.6, '#ffb347', 1); }   // 폭탄 머리띠
+    c.beginPath(); c.ellipse(0, 12.2, 12, 3, 0, 0, Math.PI); c.closePath(); shade(T.main); c.beginPath(); c.moveTo(-5, 13.6); c.lineTo(-10 + fw * 0.5, 21); c.lineTo(-1, 16.6); c.closePath(); shade(T.main);
+    c.restore();
+  });
+}
+function pWeaponX(k, s, pk) {
+  const fxOn = !LOD.on && s.mood !== 2;
+  if (s.race === 1 && k === 7 && s.moving) { withLean(s, () => { for (const [y, l] of [[-2, 16], [7, 24], [15, 14]]) pline(-12, y, -12 - l, y, 'rgba(255,255,255,.7)', 1.4); }); return; }
+  if (s.race === 2 && k === 6) {   // 적안 독술사: 뼈 지팡이 + 독 구슬
+    const P = armPose(pk, s, true), sw = P.sw;
+    withLean(s, () => {
+      c.save(); c.translate(P.hx, P.hy); c.rotate(-0.12 - sw * 0.5);
+      rr(-1.7, -36, 3.4, 52, 1.5); fillG(null, '#d9d0b8', 1.5);
+      for (let y = -28; y < 10; y += 9) pline(-1.7, y, 1.7, y + 3, '#8a7a5a', 1);
+      for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * 2, -37); c.quadraticCurveTo(sg * 8, -40, sg * 6, -50); c.lineWidth = 3.2; c.strokeStyle = OUT; c.lineCap = 'round'; c.stroke(); c.lineWidth = 1.5; c.strokeStyle = '#efe8d4'; c.stroke(); }
+      const pu = 1 + sw * 0.25 + Math.sin(s.tw * 1.5) * 0.06;
+      if (fxOn) glowAt(0, -45, 8 * pu + sw * 3, '#b4ff5a', 0.32 + sw * 0.3);
+      circ(0, -45, 5.4 * pu); fillG(null, '#8ad63a', 1.7); circ(-1.6, -47, 1.3); c.fillStyle = '#e8ffc0'; c.fill();
+      c.restore();
+    });
+  }
+}
+function catParts(k, race = 0) {
+  const P = [], pk = race ? POSE[race][k] : k;
+  if (race ? (race === 1 && k === 8) : k === 5) P.push({ n: 'cape', ox: -12, oy: 8, w: 22, h: 20, draw: (s) => pCape(k, s) });
   P.push({ n: 'tail', ox: -14, oy: 14, w: 16, h: 12, draw: (s) => pTail(k, s) });
   P.push({ n: 'legB', ox: -4, oy: 17, w: 9, h: 8, still: 1, draw: (s) => pLegs(k, s, true) });
-  P.push({ n: 'armB', ox: -3, oy: 8, w: 8, h: 10, lunge: 0.25, draw: (s) => pArmB(k, s) });
+  P.push({ n: 'armB', ox: -3, oy: 8, w: 8, h: 10, lunge: 0.25, draw: (s) => pArmB(k, s, pk) });
   P.push({ n: 'body', ox: 0, oy: 10, w: 24, h: 18, lunge: 0.25, draw: (s) => pBody(k, s) });
   P.push({ n: 'legF', ox: 5, oy: 17, w: 9, h: 8, still: 1, draw: (s) => pLegs(k, s, false) });
   P.push({ n: 'head', ox: 3, oy: -5, w: 32, h: 28, head: 1, lunge: 0.5, draw: (s) => pHead(k, s) });
-  P.push({ n: 'armF', ox: 10, oy: 9, w: 12, h: 10, lunge: 0.8, draw: (s) => pArmF(k, s) });
-  P.push({ n: 'weapon', ox: 14, oy: 8, w: k === 5 ? 40 : 22, h: 10, lunge: 0.8, noPiece: [0, 6, 7, 8].includes(k) ? 1 : 0, draw: (s) => pWeapon(k, s) });
+  P.push({ n: 'armF', ox: 10, oy: 9, w: 12, h: 10, lunge: 0.8, draw: (s) => pArmF(k, s, pk) });
+  P.push({ n: 'weapon', ox: 14, oy: 8, w: pk === 5 ? 40 : 22, h: 10, lunge: 0.8, noPiece: race ? (race === 2 && k === 6 ? 0 : 1) : ([0, 6, 7, 8].includes(k) ? 1 : 0), draw: (s) => pWeapon(k, s, pk) });
   return P;
 }
-const PARTS = CATS.map((D) => catParts(D.a));
+const PARTS = CATS.map((D) => catParts(D.a, D.race));
 function drawSprites(k, st, bob, lunge) {
   c.save(); c.translate(0, FOOT); c.scale(ARTSC, ARTSC); c.translate(0, -FOOT);
   for (const p of PARTS[k]) { c.save(); c.translate(p.lunge ? lunge * p.lunge : 0, p.still ? 0 : -bob); p.draw(st); c.restore(); }
@@ -762,8 +999,16 @@ function nextTier() {   // 적 캣타워: 부수면 다음 단계가 새로 솟�
   later(24, () => pop(cx - 80, GROUND - 120, '적 증원 등장!', '#ff9b8a', 36));
   sfx('boom');
 }
-function killCat(u, dir) {
-  const g = u.g; if (g.dead) return; g.dead = true;
+function killCat(u, dir, force) {
+  const g = u.g; if (g.dead) return;
+  const D0 = CATS[g.k];
+  if (D0.reborn && !g.revived && !force) {   // 윤회: 처음 죽을 때 체력 40%로 되살아난다
+    g.revived = true; g.hp = g.max * 0.4; g.sh = 0; g.bleed = 0; g.stun = 0; g.shieldT = 90; g.hurt = 0;
+    addV('dome', u.position.x, u.position.y + 6, { life: 60, size: 120, color: '#b58bff' }); addV('ring', u.position.x, u.position.y - 6, { life: 30, size: 200, color: '#d6b8ff', sq: 0.4 });
+    fx('star', u.position.x, u.position.y - 14, 10); pop(u.position.x, u.position.y - 60, '윤회!', '#d6b8ff', 40); sfx('lvup');
+    return;
+  }
+  g.dead = true;
   const D = CATS[g.k], sc = D.sc, yoff = D.h / 2 - FOOT * sc;
   Composite.remove(engine.world, u); G.cats = G.cats.filter((x) => x !== u);
   if (g.team === 1) G.stats.kills++; else G.stats.lost++;
@@ -801,13 +1046,13 @@ function explode(x, y, team, dmg, rad, knock = 1, magic = false) {
 }
 function castOrb(u, tgt) {
   const g = u.g, D = CATS[g.k], s = S[g.team], arrow = D.ranged === 'arrow';
-  g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1) * (g.frenzyT > 0 ? 0.5 : 1); g.atk = ATK_T;
+  g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1) * (g.frenzyT > 0 ? 0.5 : g.howlT > 0 ? 0.7 : 1); g.atk = ATK_T;
   const edgeEn = g.team ? EDGE : W - EDGE, x0 = u.position.x + g.face * 16, y0 = u.position.y - (arrow ? 6 : 30);
   shots.push({ kind: arrow ? 'arrow' : 'orb', base: !!tgt.base, x0, y0, x1: tgt.base ? edgeEn : tgt.body.position.x, y1: tgt.base ? GROUND - (arrow ? 36 : 40) : tgt.body.position.y - (arrow ? 4 : 0),
-    t: arrow ? -5 : -14, dur: arrow ? 24 : 34, team: g.team, dmg: D.atk * (1 + 0.15 * s.up.atk), tb: tgt.base ? null : tgt.body, x: x0, y: y0, col: D.shotCol, fxk: D.shotFx, rad: D.shotRad });
+    t: arrow ? -5 : -14, dur: arrow ? 24 : 34, team: g.team, dmg: D.atk * (1 + 0.15 * s.up.atk) * (g.packT > 0 ? 1.15 : 1), tb: tgt.base ? null : tgt.body, x: x0, y: y0, col: D.shotCol, fxk: D.shotFx, rad: D.shotRad });
   if (!arrow) addV('charge', u.position.x + g.face * 18, u.position.y - 26, { life: 16, size: 26 });
   sfx('shoot');
-  if (rollSkill(g)) skillRanged(u, tgt, D.atk * (1 + 0.15 * s.up.atk));
+  if (rollSkill(g)) skillRanged(u, tgt, D.atk * (1 + 0.15 * s.up.atk) * (g.packT > 0 ? 1.15 : 1));
 }
 function shotStatus(s) {   // 산성(방어 감소) · 독(출혈) · 화염(불바닥)
   const r = (s.rad || 80) + 10;
@@ -1041,7 +1286,7 @@ function skillMelee(u, tg, dmg) {   // 근접 유닛 스킬
     case 0: case 18:   // 냥냥 연타 / 물어뜯기
       for (let i = 0; i < 3; i++) later(5 + i * 6, () => { hitT(0.8, false); addV('claw', tx + rnd(-10, 10), ty + rnd(-8, 8), { dir: fc, life: 16, col2: pick(['#ffb347', '#ff8a3a', '#ffd84a']) }); addV('flash', tx, ty, { life: 8, size: 40, color: '#ffe27a' }); fx('star', tx, ty, 3); sfx('hit'); });
       break;
-    case 1: case 19:   // 그림자 습격 / 위장 기습: 뒤로 순간이동 + 3배 치명타
+    case 1: case 22:   // 그림자 습격 / 위장 기습: 뒤로 순간이동 + 3배 치명타
       if (tb && !tb.g.dead) {
         for (let i = 0; i < 3; i++) addV('ghost', ux + (tx - ux) * i / 3, u.position.y + D.h / 2 - FOOT * D.sc + g.lane, { life: 16 - i * 2, k: g.k, face: fc, sc: D.sc, team });
         fx('dust', ux, uy, 8); fx('spark', ux, uy, 8, 0, '#b58bff');
@@ -1072,8 +1317,8 @@ function skillMelee(u, tg, dmg) {   // 근접 유닛 스킬
       for (let i = 0; i < 6; i++) fx('spark', ux + rnd(-20, 20), uy, 1, 0, '#7dff9b');
       hitT(1.0, false); addV('claw', tx, ty, { dir: fc, life: 16, col2: '#ff3b3b' });
       break;
-    case 7: case 15: {   // 섬광 돌진 / 눈보라 돌진
-      const ice = g.k === 15;
+    case 7: case 14: {   // 섬광 돌진 / 추격 돌진(적을 얼린다)
+      const ice = g.k === 14;
       const lim = g.team ? EDGE + 40 : W - EDGE - 40, nx = clamp(ux + fc * 170, Math.min(ux, lim), Math.max(ux, lim));
       for (let i = 0; i < 5; i++) addV('ghost', ux + (nx - ux) * i / 5, u.position.y + D.h / 2 - FOOT * D.sc + g.lane, { life: 22 - i * 3, k: g.k, face: fc, sc: D.sc, team });
       addV('dashline', (ux + nx) / 2, uy, { life: 18, size: Math.abs(nx - ux) + 60, dir: fc, color: '#ffe27a' });
@@ -1087,10 +1332,10 @@ function skillMelee(u, tg, dmg) {   // 근접 유닛 스킬
       later(4, () => { hitT(1.8, true); if (tb && !tb.g.dead) kickCat(tb, fc * 7, -6, 24); fx('spark', tx, ty, 8, fc, '#ffd9a0'); });
       break;
     }
-    case 10: case 23: {   // 땅굴 기습 / 도약 강습: 적 후열로 이동해 강타
+    case 23: {   // 도약 강습: 적 후열로 이동해 강타
       const cand = foes().filter((e) => (e.position.x - ux) * fc > 0 && (e.position.x - ux) * fc < 340), far = cand.length ? cand.reduce((a, b) => ((b.position.x - ux) * fc > (a.position.x - ux) * fc ? b : a)) : tb;
       if (far && !far.g.dead) {
-        const dig = g.k === 10; fx('dust', ux, GROUND - 4, 8); addV('ring', ux, uy, { life: 16, size: 80, color: SKILL_COL[g.k], sq: 0.4 });
+        const dig = false; fx('dust', ux, GROUND - 4, 8); addV('ring', ux, uy, { life: 16, size: 80, color: SKILL_COL[g.k], sq: 0.4 });
         Body.setPosition(u, { x: far.position.x - fc * 30, y: u.position.y }); if (!dig) Body.setVelocity(u, { x: 0, y: -9 });
         later(4, () => { if (far.g.dead) return; hitFoe(far, dmg * (dig ? 2.5 : 2), fc, true); if (!dig) far.g.stun = 50; fx('dust', far.position.x, GROUND - 4, 8); addV('xslash', far.position.x, far.position.y - 10, { dir: fc, life: 18, color: SKILL_COL[g.k] }); });
       } else hitT(2, true);
@@ -1102,7 +1347,18 @@ function skillMelee(u, tg, dmg) {   // 근접 유닛 스킬
       hitT(1.0, false);
       break;
     }
-    case 14: {   // 철벽 진형: 주변 아군 피해 -30% + 도발
+    case 10: {   // 파수 포효: 3초 피해 -50% + 도발
+      g.tauntT = 180; g.guardT = 180; g.guardMul = 0.5; addV('dome', ux, u.position.y + 6, { life: 50, size: 110, color: '#cfd6e8' });
+      addV('wave', ux + fc * 26, uy, { dir: fc, life: 20, size: 80 }); hitT(1.0, false);
+      break;
+    }
+    case 15: {   // 무리의 울음: 주변 아군 4초간 공격 속도 +40%
+      addV('dome', ux, u.position.y + 6, { life: 60, size: 200, color: '#ffe9a0' }); roar(u);
+      for (const a of G.cats) if (a.g.team === team && !a.g.dead && Math.abs(a.position.x - ux) < 260) { a.g.howlT = 240; addV('flash', a.position.x, a.position.y - 10, { life: 14, size: 44, color: '#ffe9a0' }); }
+      hitT(1.0, false);
+      break;
+    }
+    case 13: {   // 철벽 진형: 주변 아군 피해 -30% + 도발
       g.tauntT = 240; addV('dome', ux, u.position.y + 6, { life: 60, size: 130, color: '#cfd6e8' });
       for (const a of G.cats) if (a.g.team === team && !a.g.dead && Math.abs(a.position.x - ux) < 220) { a.g.guardT = 240; a.g.guardMul = 0.7; addV('dome', a.position.x, a.position.y + 6, { life: 36, size: 46, color: '#cfd6e8' }); }
       hitT(1.0, false); addV('wave', ux + fc * 30, uy, { dir: fc, life: 22, size: 90 });
@@ -1120,12 +1376,6 @@ function skillMelee(u, tg, dmg) {   // 근접 유닛 스킬
     case 21:   // 껍질 웅크리기: 3초 피해 -70%
       g.guardT = 180; g.guardMul = 0.3; addV('dome', ux, u.position.y + 6, { life: 50, size: 90, color: '#6bd5a9' }); hitT(1.0, false);
       break;
-    case 24: {   // 가시 폭발: 주변 광역 + 출혈
-      explode(ux, uy, team, dmg * 1.6, 105, 1.2, false);
-      for (const e of foes()) if (Math.abs(e.position.x - ux) < 105 && !e.g.dead) { e.g.bleed = 120; e.g.bleedDmg = Math.max(1.5, D.atk * 0.25); }
-      for (let i = 0; i < 10; i++) fx('spark', ux + rnd(-30, 30), uy + rnd(-10, 10), 1, 0, '#c8ff7a');
-      break;
-    }
     case 25:   // 맹독 포식: 2.5배, 처치하면 체력 30% 회복
       later(4, () => {
         if (tb && !tb.g.dead) { hitFoe(tb, dmg * 2.5, fc, true); if (tb.g.dead) { g.hp = Math.min(g.max, g.hp + g.max * 0.3); pop(ux, u.position.y - 70, '+' + Math.round(g.max * 0.3), '#7dff9b', 34); } else { tb.g.bleed = 180; tb.g.bleedDmg = Math.max(1.5, D.atk * 0.2); } addV('claw', tx, ty, { dir: fc, life: 16, col2: '#9ad94a' }); }
@@ -1155,13 +1405,12 @@ function skillRanged(u, tg, dmg) {   // 원거리 유닛 스킬 (궁수: 화살�
         for (const e of foesOf(g)) if (Math.abs(e.position.x - x) < 42) hitFoe(e, dmg * 0.7, fc, false);
         if (Math.abs(x - (team ? EDGE : W - EDGE)) < 70) dmgBase(1 - team, dmg * 0.7); sfx('hit'); });
     }
-  } else if (g.k === 11) {   // 관통탄: 일직선 모든 적 1.5배
+  } else if (g.k === 11) {   // 공명 짖음: 전방 적을 1초 기절
     const ux = u.position.x, uy = u.position.y - 14;
-    addV('bolt', ux + fc * 20, uy, { life: 14, to: [ux + fc * 460, uy], color: '#ffe27a' }); addV('ring', ux + fc * 24, uy, { life: 12, size: 50, color: '#ffe27a' });
-    later(5, () => { for (const e of foesOf(g)) { const dx = (e.position.x - ux) * fc; if (dx > 0 && dx < 470) { hitFoe(e, dmg * 1.5, fc, false); fx('spark', e.position.x, e.position.y - 8, 4, fc, '#ffe27a'); } } });
-  } else if (g.k === 13) { addZone(tx, 110, 3, team, dmg * 0.5, 'psy', '#7fd4ff'); addV('ring', tx, GROUND - 6, { life: 24, size: 220, color: '#bfe8ff', sq: 0.3 }); addV('rune', tx, GROUND + 4, { life: 40, size: 110 });
-  } else if (g.k === 20) { addZone(tx, 80, 2, team, dmg * 0.6, 'acid', '#a6ff4d'); addV('ring', tx, GROUND - 6, { life: 20, size: 150, color: '#c8ff7a', sq: 0.3 });
-  } else if (g.k === 22) { addZone(tx, 130, 4, team, dmg * 0.4, 'poison', '#8bff4d'); addV('ring', tx, GROUND - 6, { life: 24, size: 250, color: '#d8ff9a', sq: 0.3 });
+    addV('wave', ux + fc * 40, uy, { dir: fc, life: 22, size: 130 }); addV('ring', ux + fc * 30, uy, { life: 18, size: 90, color: '#bfe8ff' });
+    later(4, () => { for (const e of foesOf(g)) { const dx = (e.position.x - ux) * fc; if (dx > 0 && dx < 200) { hitFoe(e, dmg * 1.2, fc, false); if (!e.g.dead) e.g.stun = Math.max(e.g.stun, 60); fx('spark', e.position.x, e.position.y - 8, 4, fc, '#bfe8ff'); } } });
+  } else if (g.k === 19) { addZone(tx, 80, 2, team, dmg * 0.6, 'acid', '#a6ff4d'); addV('ring', tx, GROUND - 6, { life: 20, size: 150, color: '#c8ff7a', sq: 0.3 });
+  } else if (g.k === 24) { for (const e of foesOf(g)) if (Math.abs(e.position.x - tx) < 150) e.g.chillT = 180; addZone(tx, 130, 4, team, dmg * 0.4, 'poison', '#d8a0ff'); addV('ring', tx, GROUND - 6, { life: 24, size: 250, color: '#d8ff9a', sq: 0.3 });
   } else if (g.k === 26) { addZone(tx, 150, 3, team, dmg * 0.5, 'fire', '#ff8a3a'); for (let i = -1; i <= 1; i++) addV('flash', tx + i * 70, GROUND - 30, { life: 18, size: 80, color: '#ff8a3a' }); cam.shake = Math.max(cam.shake, 10);
   } else if (g.k === 4) {   // 썬더볼트: 하늘에서 번개 3줄기가 연달아 내리꽂는 광역 마법
     for (let i = 0; i < 3; i++) {
@@ -1176,11 +1425,15 @@ function skillRanged(u, tg, dmg) {   // 원거리 유닛 스킬 (궁수: 화살�
 }
 function swing(u, tg) {
   const g = u.g, D = CATS[g.k], s = sideOf(u), fc = g.face;
-  g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1) * (g.frenzyT > 0 ? 0.5 : 1); g.atk = ATK_T;
-  let dmg = D.atk * (1 + 0.15 * s.up.atk), crit = false;
+  g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1) * (g.frenzyT > 0 ? 0.5 : g.howlT > 0 ? 0.7 : 1); g.atk = ATK_T;
+  let dmg = D.atk * (1 + 0.15 * s.up.atk) * (g.packT > 0 ? 1.15 : 1), crit = false;
   if (D.firstMul && g.first) { dmg *= D.firstMul; crit = true; g.first = false; }
   const ux = u.position.x, uy = u.position.y + D.h / 2 - FOOT * D.sc + g.lane;
   if (D.ghost) for (let i = 1; i <= 2; i++) addV('ghost', ux - fc * i * 20, uy, { life: 14 - i * 2, k: g.k, face: fc, sc: D.sc * (1 + g.lane / 260), team: g.team });
+  if (D.suicide) {   // 알폭탄: 닿으면 터지고 사라진다 (스킬이 터지면 폭발 반경 2배)
+    const big = rollSkill(g); if (big) skillFx(u, true);
+    explode(ux + fc * 12, uy - 10, g.team, dmg * (big ? 1.4 : 1), D.blast * (big ? 2 : 1), 1.3, false); killCat(u, fc, true); return;
+  }
   if (D.big) bigSlash(u);
   const sk = rollSkill(g);
   g.n = (g.n || 0) + 1; if (D.roar && g.n % 4 === 0) roar(u);
@@ -1215,16 +1468,17 @@ function updateCat(u, ts) {
     if (g.bt >= 30) { g.bt = 0; const bd = g.bleedDmg * (1 - 0.12 * S[g.team].up.def); g.hp -= bd; g.hurt = 4; fx('spark', u.position.x, u.position.y - 4, 2, 0, '#ff3b3b'); dmgNum(u, bd, false); if (g.hp <= 0) { killCat(u, 0); return; } }
   } g.hurt = Math.max(0, g.hurt - ts); g.atk = Math.max(0, g.atk - ts);
   if (g.shieldT > 0) g.shieldT -= ts;
-  if (g.guardT > 0) g.guardT -= ts; if (g.armorT > 0) g.armorT -= ts; if (g.chillT > 0) g.chillT -= ts; if (g.tauntT > 0) g.tauntT -= ts; if (g.boostT > 0) g.boostT -= ts;
+  if (g.guardT > 0) g.guardT -= ts; if (g.armorT > 0) g.armorT -= ts; if (g.chillT > 0) g.chillT -= ts; if (g.tauntT > 0) g.tauntT -= ts; if (g.boostT > 0) g.boostT -= ts; if (g.packT > 0) g.packT -= ts; if (g.howlT > 0) g.howlT -= ts;
   if (g.noHit > 0) g.noHit -= ts;
-  if (D.race === 1) { if (g.noHit <= 0 && g.sh < g.shMax) g.sh = Math.min(g.shMax, g.sh + g.shMax * 0.1 * ts / 60 * (g.boostT > 0 ? 1.5 : 1)); }
-  else if (D.race === 2 && g.hp < g.max) g.hp = Math.min(g.max, g.hp + g.max * 0.008 * (D.regenMul || 1) * ts / 60);
-  if (D.healAura || D.guardAura) {
+  if (D.race === 1) { if (g.noHit <= 0 && g.sh < g.shMax) g.sh = Math.min(g.shMax, g.sh + g.shMax * RACES[1].shRegen * ts / 60 * (g.boostT > 0 ? 1.5 : 1)); }
+  else if (D.race === 2 && g.hp < g.max) g.hp = Math.min(g.max, g.hp + g.max * RACES[2].regen * (D.regenMul || 1) * ts / 60);
+  if (D.healAura || D.guardAura || D.packAura) {
     g.auT -= ts;
     if (g.auT <= 0) {
       g.auT = D.healAura ? 60 : 30;
       for (const a of G.cats) if (a.g.team === g.team && !a.g.dead && Math.abs(a.position.x - u.position.x) < (D.healAura ? 150 : 170)) {
         if (D.healAura) { if (a.g.sh < a.g.shMax) a.g.sh = Math.min(a.g.shMax, a.g.sh + a.g.shMax * 0.08); else if (a.g.hp < a.g.max) a.g.hp = Math.min(a.g.max, a.g.hp + a.g.max * 0.015); }
+        else if (D.packAura) a.g.packT = 40;
         else a.g.boostT = 40;
       }
       if (D.healAura && Math.random() < 0.6) fx('spark', u.position.x + rnd(-40, 40), u.position.y - 10, 1, 0, '#9bffb0');
@@ -1232,7 +1486,7 @@ function updateCat(u, ts) {
   }
   if (g.frenzyT > 0) { g.frenzyT -= ts; if (Math.random() < 0.5) fx('spark', u.position.x + rnd(-14, 14), u.position.y + rnd(-D.h * 0.4, D.h * 0.3), 1, 0, '#ff5a4b'); }
   if (D.aura && Math.random() < D.aura.p) fx('spark', u.position.x + rnd(-D.w * 0.4, D.w * 0.4), u.position.y + rnd(-D.h * 0.5, D.h * 0.2), 1, 0, D.aura.c);
-  if (u.position.x < -200 || u.position.x > W + 200 || u.position.y > H + 300) { killCat(u, dir); return; }
+  if (u.position.x < -200 || u.position.x > W + 200 || u.position.y > H + 300) { killCat(u, dir, true); return; }
   if (g.stun > 0 || u.position.y < GROUND - D.h / 2 - 5) { g.stun = Math.max(0, g.stun - ts); g.spin += u.velocity.x * 0.05 * ts; g.moving = false; return; }
   g.spin = 0;
   const edgeOwn = g.team ? W - EDGE : EDGE, edgeEn = g.team ? EDGE : W - EDGE;
@@ -1302,6 +1556,7 @@ function aiThink(ts) {
 
 /* ---------------- 진행 ---------------- */
 function step() {
+  if (patchOpen) return;   // 패치표를 보는 동안은 게임이 멈춘다
   const target = G.state === 'over' ? 0.3 : (slowManual ? 0.35 : (G.slowT > 0 ? 0.3 : 1));
   G.slowT = Math.max(0, G.slowT - 1);
   G.ts += (target - G.ts) * 0.15;
@@ -1584,11 +1839,43 @@ $('bRetry').addEventListener('click', () => { $('ovEnd').hidden = true; $('ovTit
 $('bSpecial').addEventListener('click', () => { audio(); useSpecial(0); });
 function setSlow(v) { slowManual = v; $('bSlow').classList.toggle('on', v); }
 $('bSlow').addEventListener('click', () => setSlow(!slowManual));
+/* ---------------- 밸런스 패치표 (패치 이력은 PATCH_NOTES 에 계속 덧붙인다) ---------------- */
+const PATCH_NOTES = [{"ver": "v2.0", "date": "2026-11-24", "title": "3종족 테크트리 개편 + 시뮬레이션 밸런스", "summary": ["강아지(개 → 늑대)와 도마뱀(일반 → 적안 → 윤안)의 테크트리를 새로 짰고, 새 로스터로 모의 전투를 돌려 밸런스를 맞췄어요.", "개편 직후 종족 평균 승률은 고양이 61% / 강아지 39% / 도마뱀 50%로 강아지가 크게 약했어요(후반 물량에 밀림). 점수 34.44.", "8가지 가정(비용·스탯·손잡이·복합·미세 조정)을 같은 조건으로 비교해 <b>Q2(스탯 조정)</b>를 골랐어요: 52% / 52% / 46%, 점수 11.82.", "강아지는 체력·보호막 +15%에 늑대 공격 +8%, 도마뱀은 1~2단계 공격 −8%, 고양이는 1~2단계 공격 −5%예요. 비용은 그대로 둬서 \"강아지=비싸고 튼튼, 도마뱀=싸고 많음\" 컨셉을 지켰어요.", "남은 상성: 특수기를 켠 소규모 교전에서는 고양이 참치캔이 도마뱀 물량을 쓸어버려요(가위바위보 의도). 모의 교전은 표본 24판이라 ±8%p 정도 흔들릴 수 있어요.", "새 능력: 무리 오라(우두머리 늑대), 자폭(알폭탄), 윤회(윤안 유닛은 첫 죽음에 체력 40%로 부활)."], "knobs": [["고양이", "유닛 상한", 24, 24, 1], ["고양이", "강화 비용", "−10%", "−10%", 1], ["강아지", "유닛 상한", 18, 18, 1], ["강아지", "소환 대기시간", "×1.2", "×1.2", 1], ["강아지", "보호막 회복(안 맞은 3초 뒤)", "초당 10%", "초당 10%", 1], ["도마뱀", "유닛 상한", 32, 32, 1], ["도마뱀", "소환 대기시간", "×0.7", "×0.7", 1], ["도마뱀", "체력 재생", "초당 0.8%", "초당 0.8%", 1]], "cands": [{"id": "N0", "desc": "기준선 — 테크트리 개편 직후 값 그대로", "score": 34.44, "rates": [0.606, 0.394, 0.5], "pick": false}, {"id": "Q1", "desc": "비용·체력: 강아지 비용 −8%, 늑대 체력·보호막 +12%, 윤안 도마뱀 체력 −15%, 고양이 1~2단계 체력 −5%, 도마뱀 상한 30", "score": 25.65, "rates": [0.526, 0.523, 0.451], "pick": false}, {"id": "Q2", "desc": "스탯: 강아지 체력·보호막 +15%, 늑대 공격 +8%, 도마뱀 1~2단계 공격 −8%, 고양이 1~2단계 공격 −5%", "score": 11.82, "rates": [0.521, 0.521, 0.458], "pick": true}, {"id": "Q3", "desc": "종족 손잡이만: 고양이 상한 22, 강아지 상한 20·소환 대기 −8%·보호막 회복 +20%, 도마뱀 상한 28·재생 −12%", "score": 22.32, "rates": [0.62, 0.451, 0.429], "pick": false}, {"id": "Q4", "desc": "복합: 강아지 비용 −5%·체력 +8%·늑대 공격 +5%, 윤안 도마뱀 비용 +8%, 고양이 1~2단계 체력 −5%·3~4단계 +5%, 상한 조정", "score": 16.28, "rates": [0.556, 0.5, 0.444], "pick": false}, {"id": "S1", "desc": "Q2 + 도마뱀 전체 체력 +5%", "score": 21.13, "rates": [0.486, 0.547, 0.467], "pick": false}, {"id": "S2", "desc": "Q2에서 도마뱀 공격 하향을 뺌", "score": 15.97, "rates": [0.538, 0.54, 0.422], "pick": false}, {"id": "S3", "desc": "Q2 + 도마뱀 1~2단계 비용 −5%, 윤안 도마뱀 체력 +6%", "score": 14.2, "rates": [0.509, 0.517, 0.474], "pick": false}], "win": {"cols": ["고양이 vs 강아지", "고양이 vs 도마뱀", "강아지 vs 도마뱀"], "rows": [["예산 300 · 특수기 끔", [0.417, 0.917, 0.542], [0.292, 0.688, 0.583]], ["예산 300 · 특수기 켬", [0.583, 0.917, 0.333], [0.583, 0.958, 0.542]], ["예산 700 · 특수기 끔", [0.375, 0.458, 0.458], [0.354, 0.5, 0.562]], ["예산 700 · 특수기 켬", [0.708, 0.875, 0.375], [0.417, 0.667, 0.521]], ["예산 1500 · 특수기 끔", [0.75, 0.25, 0.125], [0.583, 0.333, 0.438]], ["예산 1500 · 특수기 켬", [0.521, 0.5, 0.25], [0.417, 0.458, 0.25]]], "avg": [[0.606, 0.394, 0.5], [0.521, 0.521, 0.458]]}, "units": [[{"tier": 1, "name": "길냥이", "nw": false, "a": {"cost": 25, "hp": 100, "sh": 0, "dr": 1, "atk": 11, "cd": 36}, "b": {"cost": 25, "hp": 100, "sh": 0, "dr": 1, "atk": 10.4, "cd": 36}, "skill": "냥냥 연타", "sp": 0.05}, {"tier": 1, "name": "도적냥이", "nw": false, "a": {"cost": 40, "hp": 85, "sh": 0, "dr": 1, "atk": 18, "cd": 24}, "b": {"cost": 40, "hp": 85, "sh": 0, "dr": 1, "atk": 17.1, "cd": 24}, "skill": "그림자 습격", "sp": 0.05}, {"tier": 1, "name": "궁수냥이", "nw": false, "a": {"cost": 45, "hp": 70, "sh": 0, "dr": 1, "atk": 14, "cd": 34}, "b": {"cost": 45, "hp": 70, "sh": 0, "dr": 1, "atk": 13.3, "cd": 34}, "skill": "화살비", "sp": 0.05}, {"tier": 2, "name": "전사냥이", "nw": false, "a": {"cost": 90, "hp": 250, "sh": 0, "dr": 0.85, "atk": 15, "cd": 44}, "b": {"cost": 90, "hp": 250, "sh": 0, "dr": 0.85, "atk": 14.2, "cd": 44}, "skill": "방패 강타", "sp": 0.1}, {"tier": 2, "name": "마법사냥이", "nw": false, "a": {"cost": 110, "hp": 80, "sh": 0, "dr": 1, "atk": 22, "cd": 100}, "b": {"cost": 110, "hp": 80, "sh": 0, "dr": 1, "atk": 20.9, "cd": 100}, "skill": "썬더볼트", "sp": 0.1}, {"tier": 3, "name": "용사냥이", "nw": false, "a": {"cost": 200, "hp": 350, "sh": 0, "dr": 0.88, "atk": 18, "cd": 58}, "b": {"cost": 200, "hp": 350, "sh": 0, "dr": 0.88, "atk": 18, "cd": 58}, "skill": "성검 낙뢰", "sp": 0.15}, {"tier": 3, "name": "삵", "nw": false, "a": {"cost": 140, "hp": 200, "sh": 0, "dr": 1, "atk": 27, "cd": 22}, "b": {"cost": 140, "hp": 200, "sh": 0, "dr": 1, "atk": 27, "cd": 22}, "skill": "피의 광란", "sp": 0.15}, {"tier": 4, "name": "치타", "nw": false, "a": {"cost": 250, "hp": 250, "sh": 0, "dr": 1, "atk": 30, "cd": 26}, "b": {"cost": 250, "hp": 250, "sh": 0, "dr": 1, "atk": 30, "cd": 26}, "skill": "섬광 돌진", "sp": 0.2}, {"tier": 4, "name": "표범", "nw": false, "a": {"cost": 420, "hp": 400, "sh": 0, "dr": 0.85, "atk": 50, "cd": 60}, "b": {"cost": 420, "hp": 400, "sh": 0, "dr": 0.85, "atk": 50, "cd": 60}, "skill": "흑염 대참격", "sp": 0.2}], [{"tier": 1, "name": "시바 보병", "nw": false, "a": {"cost": 33, "hp": 100, "sh": 32, "dr": 1, "atk": 10, "cd": 36}, "b": {"cost": 33, "hp": 115, "sh": 37, "dr": 1, "atk": 10, "cd": 36}, "skill": "충성 돌격", "sp": 0.05}, {"tier": 1, "name": "진돗개 파수견", "nw": true, "a": {"cost": 50, "hp": 140, "sh": 40, "dr": 0.85, "atk": 9, "cd": 40}, "b": {"cost": 50, "hp": 161, "sh": 46, "dr": 0.85, "atk": 9, "cd": 40}, "skill": "파수 포효", "sp": 0.05}, {"tier": 1, "name": "비글 짖음꾼", "nw": true, "a": {"cost": 55, "hp": 70, "sh": 25, "dr": 1, "atk": 11, "cd": 48}, "b": {"cost": 55, "hp": 80, "sh": 29, "dr": 1, "atk": 11, "cd": 48}, "skill": "공명 짖음", "sp": 0.05}, {"tier": 2, "name": "리트리버 구조견", "nw": false, "a": {"cost": 110, "hp": 190, "sh": 58, "dr": 1, "atk": 8, "cd": 48}, "b": {"cost": 110, "hp": 218, "sh": 67, "dr": 1, "atk": 8, "cd": 48}, "skill": "치유의 빛", "sp": 0.1}, {"tier": 2, "name": "셰퍼드 군견", "nw": true, "a": {"cost": 150, "hp": 300, "sh": 80, "dr": 0.8, "atk": 15, "cd": 54}, "b": {"cost": 150, "hp": 345, "sh": 92, "dr": 0.8, "atk": 15, "cd": 54}, "skill": "철벽 진형", "sp": 0.1}, {"tier": 3, "name": "늑대개 추적자", "nw": true, "a": {"cost": 165, "hp": 210, "sh": 58, "dr": 1, "atk": 24, "cd": 30}, "b": {"cost": 165, "hp": 242, "sh": 67, "dr": 1, "atk": 25.9, "cd": 30}, "skill": "추격 돌진", "sp": 0.15}, {"tier": 3, "name": "회색늑대 우두머리", "nw": true, "a": {"cost": 200, "hp": 300, "sh": 90, "dr": 1, "atk": 20, "cd": 40}, "b": {"cost": 200, "hp": 345, "sh": 104, "dr": 1, "atk": 21.6, "cd": 40}, "skill": "무리의 울음", "sp": 0.15}, {"tier": 4, "name": "그림자 늑대", "nw": true, "a": {"cost": 286, "hp": 230, "sh": 78, "dr": 1, "atk": 30, "cd": 27}, "b": {"cost": 286, "hp": 264, "sh": 90, "dr": 1, "atk": 32.4, "cd": 27}, "skill": "섬광 연격", "sp": 0.2}, {"tier": 4, "name": "달빛 알파 늑대", "nw": true, "a": {"cost": 484, "hp": 680, "sh": 208, "dr": 0.85, "atk": 38, "cd": 66}, "b": {"cost": 484, "hp": 782, "sh": 239, "dr": 0.85, "atk": 41, "cd": 66}, "skill": "만월의 포효", "sp": 0.2}], [{"tier": 1, "name": "새끼 도마뱀 ×2", "nw": false, "a": {"cost": 39, "hp": 40, "sh": 0, "dr": 1, "atk": 6, "cd": 24}, "b": {"cost": 39, "hp": 40, "sh": 0, "dr": 1, "atk": 5.5, "cd": 24}, "skill": "물어뜯기", "sp": 0.05}, {"tier": 1, "name": "산성 침뱉이", "nw": false, "a": {"cost": 50, "hp": 50, "sh": 0, "dr": 1, "atk": 10, "cd": 33}, "b": {"cost": 50, "hp": 50, "sh": 0, "dr": 1, "atk": 9.2, "cd": 33}, "skill": "산성 웅덩이", "sp": 0.05}, {"tier": 1, "name": "알폭탄 도마뱀", "nw": true, "a": {"cost": 35, "hp": 45, "sh": 0, "dr": 1, "atk": 40, "cd": 20}, "b": {"cost": 35, "hp": 45, "sh": 0, "dr": 1, "atk": 36.8, "cd": 20}, "skill": "연쇄 폭발", "sp": 0.05}, {"tier": 2, "name": "이구아나 갑각병", "nw": false, "a": {"cost": 107, "hp": 260, "sh": 0, "dr": 1, "atk": 12, "cd": 42}, "b": {"cost": 107, "hp": 260, "sh": 0, "dr": 1, "atk": 11, "cd": 42}, "skill": "껍질 웅크리기", "sp": 0.1}, {"tier": 2, "name": "카멜레온", "nw": false, "a": {"cost": 70, "hp": 80, "sh": 0, "dr": 1, "atk": 18, "cd": 30}, "b": {"cost": 70, "hp": 80, "sh": 0, "dr": 1, "atk": 16.6, "cd": 30}, "skill": "위장 기습", "sp": 0.1}, {"tier": 3, "name": "적안 바실리스크", "nw": true, "a": {"cost": 192, "hp": 180, "sh": 0, "dr": 1, "atk": 24, "cd": 24}, "b": {"cost": 192, "hp": 180, "sh": 0, "dr": 1, "atk": 24, "cd": 24}, "skill": "도약 강습", "sp": 0.15}, {"tier": 3, "name": "적안 독술사", "nw": true, "a": {"cost": 170, "hp": 130, "sh": 0, "dr": 1, "atk": 18, "cd": 60}, "b": {"cost": 170, "hp": 130, "sh": 0, "dr": 1, "atk": 18, "cd": 60}, "skill": "환각 독구름", "sp": 0.15}, {"tier": 4, "name": "윤안 코모도", "nw": true, "a": {"cost": 522, "hp": 480, "sh": 0, "dr": 1, "atk": 44, "cd": 60}, "b": {"cost": 522, "hp": 480, "sh": 0, "dr": 1, "atk": 44, "cd": 60}, "skill": "맹독 포식", "sp": 0.2}, {"tier": 4, "name": "윤안 화염 드래곤", "nw": true, "a": {"cost": 596, "hp": 320, "sh": 0, "dr": 1, "atk": 30, "cd": 72}, "b": {"cost": 596, "hp": 320, "sh": 0, "dr": 1, "atk": 30, "cd": 72}, "skill": "화염 브레스", "sp": 0.2}]], "tech": [{"race": "강아지", "rows": [[1, "시바 보병", "시바 보병", "기본 근접 · 충성 돌격"], [1, "닥스훈트 굴착병", "진돗개 파수견", "초반 탱커 · 도발 · 파수 포효"], [1, "비글 저격수", "비글 짖음꾼", "음파 사격 · 공명 짖음(전방 기절)"], [2, "리트리버 성기사", "리트리버 구조견", "지원 · 회복 오라 · 치유의 빛"], [2, "보더콜리 술사", "셰퍼드 군견", "중장 탱커 · 철벽 진형"], [3, "셰퍼드 기갑견", "늑대개 추적자", "반늑대 사냥꾼 · 둔화+출혈 · 추격 돌진"], [3, "허스키 썰매대", "회색늑대 우두머리", "무리 오라(주변 공격 +15%) · 무리의 울음"], [4, "그레이하운드", "그림자 늑대", "초고속 암살 · 섬광 연격"], [4, "세인트버나드", "달빛 알파 늑대", "보스 · 보호막 오라 · 만월의 포효"]]}, {"race": "도마뱀", "rows": [[1, "새끼 도마뱀 ×2", "새끼 도마뱀 ×2", "물량 근접 · 물어뜯기"], [1, "카멜레온", "산성 침뱉이", "산성 원거리 · 산성 웅덩이"], [1, "침뱉이 도마뱀", "알폭탄 도마뱀", "자폭(반경 70) · 연쇄 폭발(반경 2배)"], [2, "이구아나 갑각병", "이구아나 갑각병", "재생 탱커 · 껍질 웅크리기"], [2, "독도마뱀 술사", "카멜레온", "은신 암살 · 위장 기습"], [3, "바실리스크", "적안 바실리스크", "도약 기동 · 붉은 사륜안 눈"], [3, "가시도마뱀", "적안 독술사", "독 광역 · 환각 독구름 · 붉은 사륜안 눈"], [4, "코모도 왕도마뱀", "윤안 코모도", "보스 · 윤회(첫 죽음에 체력 40%로 부활) · 윤회안 눈"], [4, "화염 드래곤 도마뱀", "윤안 화염 드래곤", "원거리 화염 · 윤회 · 윤회안 눈"]]}]}];
+let patchOpen = false, patchIdx = 0, patchTab = 'sum';
+const PTABS = [['sum', '요약'], ['cand', '가정 비교'], ['win', '승률 전후'], ['r0', '고양이'], ['r1', '강아지'], ['r2', '도마뱀'], ['tech', '테크트리 개편']];
+const pc = (a, b, fmt = (v) => v, inv = false) => (a === b ? `<td>${fmt(b)}</td>` : `<td class="${(b > a) !== inv ? 'pup' : 'pdn'}">${fmt(a)} → ${fmt(b)}</td>`);
+const pct = (v) => `${Math.round(v * 100)}%`, sec = (f) => (f / 60).toFixed(2) + 's', red = (dr) => `${Math.round((1 - (dr || 1)) * 100)}%`;
+function patchHTML(P, tab) {
+  if (tab === 'sum') return `<h3>${P.title}</h3><ul>${P.summary.map((t) => `<li>${t}</li>`).join('')}</ul><h3>종족 손잡이</h3><div class="pscroll"><table class="ptbl"><tr><th>종족</th><th>항목</th><th>이전</th><th>이후</th></tr>${P.knobs.map((r) => `<tr><td>${r[0]}</td><td class="pl">${r[1]}</td><td>${r[2]}</td>${r[2] === r[3] ? `<td>${r[3]}</td>` : `<td class="${r[4] ? 'pup' : 'pdn'}">${r[3]}</td>`}</tr>`).join('')}</table></div>`;
+  if (tab === 'cand') return `<p>같은 조건의 모의 전투(예산 300·700·1500 골드 × 특수기 끔/켬, 조합마다 24판)를 가정별로 돌려 점수가 가장 낮은(= 승률이 50%에 가까운) 안을 골랐어요. 점수는 낮을수록 좋아요.</p><div class="pscroll"><table class="ptbl"><tr><th>안</th><th>가정</th><th>점수</th><th>고양이</th><th>강아지</th><th>도마뱀</th></tr>${P.cands.map((q) => `<tr class="${q.pick ? 'pick' : ''}"><td>${q.id}${q.pick ? ' ★' : ''}</td><td class="pl">${q.desc}</td><td>${q.score}</td><td>${pct(q.rates[0])}</td><td>${pct(q.rates[1])}</td><td>${pct(q.rates[2])}</td></tr>`).join('')}</table></div><p class="pnote">종족 평균 승률 = 그 종족이 낀 모든 모의 교전의 승률 평균. 목표는 모두 50% 근처.</p>`;
+  if (tab === 'win') {
+    const row = (lab, b, a) => `<tr><td class="pl">${lab}</td>${b.map((v, i) => pc(v, a[i], pct)).join('')}</tr>`;
+    return `<p>앞에 적힌 종족이 이기는 비율이에요. 이전 = 테크트리 개편 직후 값, 이후 = 이번 패치.</p><div class="pscroll"><table class="ptbl"><tr><th>예산 · 특수기</th>${P.win.cols.map((c) => `<th>${c}</th>`).join('')}</tr>${P.win.rows.map((r) => row(r[0], r[1], r[2])).join('')}</table></div><h3>종족 평균 승률</h3><div class="pscroll"><table class="ptbl"><tr><th></th><th>고양이</th><th>강아지</th><th>도마뱀</th></tr>${row('모의 교전 평균', P.win.avg[0], P.win.avg[1])}${P.win.game ? row('전체 게임 (AI 대전)', P.win.game[0], P.win.game[1]) : ''}</table></div><p class="pnote">예산 = 양쪽이 같은 골드로 뽑은 군대가 정면 충돌. 특수기 켬 = 시작 직후 양쪽이 특수기 사용.</p>`;
+  }
+  if (tab[0] === 'r') {
+    const U = P.units[+tab[1]];
+    return `<div class="pscroll"><table class="ptbl"><tr><th>단계</th><th>유닛</th><th>비용</th><th>체력</th><th>보호막</th><th>피해 감소</th><th>공격</th><th>공격 간격</th><th>스킬</th></tr>${U.map((u) => `<tr><td>${u.tier}</td><td class="pl">${u.nw ? '<span class="nw">NEW</span> ' : ''}${u.name}</td>${pc(u.a.cost, u.b.cost, undefined, true)}${pc(u.a.hp, u.b.hp)}${u.b.sh || u.a.sh ? pc(u.a.sh || 0, u.b.sh || 0) : '<td>-</td>'}${pc(1 - (u.a.dr || 1), 1 - (u.b.dr || 1), pct)}${pc(u.a.atk, u.b.atk)}${pc(u.a.cd, u.b.cd, sec, true)}<td class="pl">${u.skill} ${pct(u.sp)}</td></tr>`).join('')}</table></div><p class="pnote">초록 = 상향, 빨강 = 하향. 비용·공격 간격은 낮을수록 유리해서 내려가면 초록이에요.</p>`;
+  }
+  return `<p>강아지와 도마뱀은 고양이 틀(기본·도적·궁수·탱커·마법사)을 버리고 종족 컨셉대로 테크트리를 새로 짰어요.</p>${P.tech.map((t) => `<h3>${t.race}</h3><div class="pscroll"><table class="ptbl"><tr><th>단계</th><th>이전 유닛</th><th>새 유닛</th><th>역할 · 특징</th></tr>${t.rows.map((r) => `<tr><td>${r[0]}</td><td class="pl rm">${r[1]}</td><td class="pl"><span class="nw">NEW</span> ${r[2]}</td><td class="pl">${r[3]}</td></tr>`).join('')}</table></div>`).join('')}`;
+}
+function renderPatch() {
+  const P = PATCH_NOTES[patchIdx]; if (!P) return;
+  $('pVer').textContent = `${P.ver} · ${P.date}`;
+  $('pSel').innerHTML = PATCH_NOTES.map((p, i) => `<option value="${i}"${i === patchIdx ? ' selected' : ''}>${p.ver}</option>`).join('');
+  $('pTabs').innerHTML = PTABS.map(([id, nm]) => `<button class="btn" type="button" role="tab" data-t="${id}" aria-pressed="${id === patchTab}">${nm}</button>`).join('');
+  $('pBody').innerHTML = patchHTML(P, patchTab);
+  document.querySelectorAll('#pTabs .btn').forEach((b) => b.addEventListener('click', () => { patchTab = b.dataset.t; renderPatch(); }));
+}
+function setPatch(v) { patchOpen = v; $('ovPatch').hidden = !v; if (v) { patchIdx = 0; renderPatch(); } }
+$('bPatch').addEventListener('click', () => setPatch(true)); $('bPatch2').addEventListener('click', () => setPatch(true)); $('bPatchX').addEventListener('click', () => setPatch(false));
+$('pSel').addEventListener('change', (e) => { patchIdx = +e.target.value; renderPatch(); });
+
 function setMute(v) { muted = v; if (master) master.gain.value = v ? 0 : 0.5; $('bMute').textContent = v ? '소리 꺼짐' : '소리 켜짐'; $('bMute').classList.toggle('on', v); }
 $('bMute').addEventListener('click', () => { audio(); setMute(!muted); });
 const HOT = { b: 'base', g: 'eco', h: 'spd', j: 'atk', k: 'def' };
 addEventListener('keydown', (e) => {
   if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (patchOpen) { if (e.key === 'Escape') setPatch(false); return; }
   const k = e.key.toLowerCase();
   if (k >= '1' && k <= '9') { audio(); trySpawn(S[0].race * 9 + +k - 1); }
   else if (k === ' ' && G.state === 'play') { e.preventDefault(); audio(); useSpecial(0); }
