@@ -103,7 +103,10 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
 @media (max-width: 900px) { .deck { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 .stg { display: flex; align-items: center; gap: 1.6cqw; font-size: clamp(14px, 2.8cqw, 24px); }
 .stg .btn { padding: 4px 16px; }
-.stg .btn.dif[aria-pressed="true"] { background: #ffcf5a; box-shadow: 0 0 0 3px #241c2e inset; }
+.unit[hidden] { display: none; }
+#raceD { margin: 0; font-size: clamp(11px, 2cqw, 17px); color: #6b5470; }
+.stg b { white-space: nowrap; }
+.stg .btn.rc[aria-pressed="true"], .stg .btn.fo[aria-pressed="true"], .stg .btn.dif[aria-pressed="true"] { background: #ffcf5a; box-shadow: 0 0 0 3px #241c2e inset; }
 #stgD { margin: 0; font-size: clamp(11px, 2cqw, 17px); color: #6b5470; }
 @media (max-width: 560px) { .btn { font-size: 15px; padding: 5px 10px; } .key { display: none; } .unit canvas { max-width: 64px; } }
 @media (prefers-reduced-motion: reduce) { .btn.ready, #rec::before { animation: none; } }
@@ -134,6 +137,9 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
         </ul>
         <div class="stg" role="group" aria-label="난이도"><button class="btn dif" type="button" data-d="0" aria-pressed="false">쉬움</button><button class="btn dif" type="button" data-d="1" aria-pressed="true">보통</button><button class="btn dif" type="button" data-d="2" aria-pressed="false">어려움</button></div>
         <p id="stgD"></p>
+        <div class="stg" role="group" aria-label="내 종족"><b>내 종족</b><button class="btn rc" type="button" data-r="0" aria-pressed="true">고양이</button><button class="btn rc" type="button" data-r="1" aria-pressed="false">강아지</button><button class="btn rc" type="button" data-r="2" aria-pressed="false">도마뱀</button></div>
+        <div class="stg" role="group" aria-label="상대 종족"><b>상대</b><button class="btn fo" type="button" data-r="0" aria-pressed="false">고양이</button><button class="btn fo" type="button" data-r="1" aria-pressed="false">강아지</button><button class="btn fo" type="button" data-r="2" aria-pressed="false">도마뱀</button><button class="btn fo" type="button" data-r="3" aria-pressed="true">랜덤</button></div>
+        <p id="raceD"></p>
         <button class="btn go" id="bStart" type="button">시작하기</button>
       </div>
     </div>
@@ -185,9 +191,44 @@ const CATS = [
   { k: 7, name: '치타', role: '돌진', cost: 250, hp: 250, atk: 30, cd: 26, rng: 30, spd: 4.2, w: 70, h: 44, sc: 1.2, top: 24, unlock: 4, firstMul: 1.8, ghost: 1, fx: 'dash', aiW: 1.8 },
   { k: 8, name: '표범', role: '보스', cost: 420, hp: 400, atk: 50, cd: 60, rng: 60, spd: 1.3, w: 96, h: 78, sc: 1.8, top: 28, unlock: 4, dr: 0.85, area: 1, big: 1, roar: 1, glow: '#ff5a4b', aura: { c: '#ff3b3b', p: 0.1 }, aiW: 1.5 },
 ];
+CATS.forEach((D, i) => { D.race = 0; D.idx = i; D.a = i; });
+const GEO = CATS.map((D) => ({ w: D.w, h: D.h, sc: D.sc, top: D.top }));
+const UNLOCK_BY = [1, 1, 1, 2, 2, 3, 3, 4, 4];
+const mkU = (race, idx, o) => Object.assign({ k: race * 9 + idx, race, idx, a: idx, unlock: UNLOCK_BY[idx] }, GEO[idx], o);
+// 강아지: 정예형 (비싸고 튼튼 + 보호막)
+CATS.push(
+  mkU(1, 0, { name: '시바 보병', role: '기본 근접', cost: 33, hp: 100, sh: 32, atk: 10, cd: 36, rng: 26, spd: 1.5, fx: 'claw', aiW: 3 }),
+  mkU(1, 1, { name: '닥스훈트 굴착병', role: '기습', cost: 46, hp: 80, sh: 26, atk: 15, cd: 27, rng: 24, spd: 2.4, tunnel: 1, fx: 'x', aiW: 2 }),
+  mkU(1, 2, { name: '비글 저격수', role: '장거리', cost: 55, hp: 65, sh: 23, atk: 17, cd: 54, rng: 280, spd: 1.3, ranged: 'arrow', shotCol: '#ffd84a', aiW: 2.2 }),
+  mkU(1, 3, { name: '리트리버 성기사', role: '지원 탱커', cost: 110, hp: 190, sh: 58, atk: 8, cd: 48, rng: 30, spd: 1.2, healAura: 1, fx: 'wave', aiW: 2.2 }),
+  mkU(1, 4, { name: '보더콜리 술사', role: '장판 마법', cost: 132, hp: 90, sh: 39, atk: 20, cd: 102, rng: 260, spd: 1.3, ranged: 'orb', shotCol: '#7fd4ff', glow: '#7fd4ff', aura: { c: '#bfe8ff', p: 0.09 }, aiW: 2.4 }),
+  mkU(1, 5, { name: '셰퍼드 기갑견', role: '중장 탱커', cost: 220, hp: 400, sh: 104, atk: 17, cd: 60, rng: 50, spd: 1.0, dr: 0.8, noKick: 1, taunt: 1, fx: 'wave', aiW: 2 }),
+  mkU(1, 6, { name: '허스키 썰매대', role: '기동 돌격', cost: 165, hp: 210, sh: 58, atk: 24, cd: 30, rng: 30, spd: 3.2, slow: 1, fx: 'claw2', aiW: 2 }),
+  mkU(1, 7, { name: '그레이하운드', role: '초고속 암살', cost: 286, hp: 230, sh: 78, atk: 30, cd: 27, rng: 30, spd: 4.6, firstMul: 2, ghost: 1, fx: 'dash', aiW: 1.8 }),
+  mkU(1, 8, { name: '세인트버나드', role: '보스 수호자', cost: 484, hp: 680, sh: 208, atk: 38, cd: 66, rng: 60, spd: 1.1, dr: 0.85, area: 1, big: 1, guardAura: 1, glow: '#9ec9ff', aura: { c: '#cfe4ff', p: 0.1 }, aiW: 1.5 }),
+  // 도마뱀: 물량형 (싸고 빠르고 체력 재생)
+  mkU(2, 0, { name: '새끼 도마뱀 ×2', role: '물량 근접', cost: 39, hp: 40, atk: 6, cd: 24, rng: 22, spd: 2.6, twin: 1, fx: 'claw', aiW: 3.5 }),
+  mkU(2, 1, { name: '카멜레온', role: '은신 기습', cost: 54, hp: 60, atk: 16, cd: 30, rng: 24, spd: 2.0, stealth: 1, firstMul: 1.8, fx: 'x', aiW: 2 }),
+  mkU(2, 2, { name: '침뱉이 도마뱀', role: '산성 원거리', cost: 50, hp: 50, atk: 10, cd: 33, rng: 200, spd: 1.6, ranged: 'orb', shotCol: '#a6ff4d', shotFx: 'acid', aiW: 2.2 }),
+  mkU(2, 3, { name: '이구아나 갑각병', role: '재생 탱커', cost: 107, hp: 260, atk: 12, cd: 42, rng: 28, spd: 1.3, regenMul: 2, fx: 'wave', aiW: 3 }),
+  mkU(2, 4, { name: '독도마뱀 술사', role: '독 광역', cost: 136, hp: 100, atk: 16, cd: 60, rng: 220, spd: 1.4, ranged: 'orb', shotCol: '#b4ff5a', shotFx: 'poison', glow: '#b4ff5a', aura: { c: '#d8ff9a', p: 0.09 }, aiW: 2.4 }),
+  mkU(2, 5, { name: '바실리스크', role: '도약 기동', cost: 192, hp: 180, atk: 24, cd: 24, rng: 28, spd: 3.6, leap: 1, fx: 'claw2', aiW: 2.2 }),
+  mkU(2, 6, { name: '가시도마뱀', role: '반사 탱커', cost: 230, hp: 300, atk: 14, cd: 48, rng: 28, spd: 1.3, reflect: 0.3, fx: 'wave', aiW: 2.2 }),
+  mkU(2, 7, { name: '코모도 왕도마뱀', role: '보스 포식자', cost: 522, hp: 480, atk: 44, cd: 60, rng: 55, spd: 1.2, bleed: 1, area: 1, big: 1, glow: '#9ad94a', aura: { c: '#c8ff7a', p: 0.1 }, aiW: 1.5 }),
+  mkU(2, 8, { name: '화염 드래곤 도마뱀', role: '원거리 화염', cost: 596, hp: 320, atk: 30, cd: 72, rng: 240, spd: 1.2, ranged: 'orb', shotCol: '#ff8a3a', shotFx: 'fire', shotRad: 110, glow: '#ff8a3a', aura: { c: '#ffb36a', p: 0.12 }, aiW: 1.5 }),
+);
+const RACES = [
+  { name: '고양이', desc: '균형형 · 강화 비용 −10%', max: 24, cdMul: 1, special: '참치캔 낙하', unlockNames: ['', '전사·마법사냥이', '용사냥이·삵', '치타·표범'] },
+  { name: '강아지', desc: '정예형 · 보호막(3초 안 맞으면 회복) · 유닛 18', max: 18, cdMul: 1.2, special: '수호 결계', unlockNames: ['', '리트리버·보더콜리', '셰퍼드·허스키', '그레이하운드·세인트버나드'] },
+  { name: '도마뱀', desc: '물량형 · 체력 재생 · 소환 빠름 · 유닛 32', max: 32, cdMul: 0.7, special: '산란 폭주', unlockNames: ['', '이구아나·독술사', '바실리스크·가시도마뱀', '코모도·드래곤'] },
+];
 const ATK_T = 22;   // 공격 모션 길이(프레임)
-const SKILL = ['냥냥 연타', '그림자 습격', '화살비', '방패 강타', '썬더볼트', '성검 낙뢰', '피의 광란', '섬광 돌진', '흑염 대참격'];
-const SKILL_COL = ['#ffb347', '#b58bff', '#9be37a', '#ffd84a', '#c9a5ff', '#fff3a0', '#ff5a4b', '#ffe27a', '#ff3b3b'];
+const SKILL = ['냥냥 연타', '그림자 습격', '화살비', '방패 강타', '썬더볼트', '성검 낙뢰', '피의 광란', '섬광 돌진', '흑염 대참격',
+  '충성 돌격', '땅굴 기습', '관통탄', '치유의 빛', '염동 폭풍', '철벽 진형', '눈보라 돌진', '섬광 연격', '수호신의 포효',
+  '물어뜯기', '위장 기습', '산성 웅덩이', '껍질 웅크리기', '독구름', '도약 강습', '가시 폭발', '맹독 포식', '화염 브레스'];
+const SKILL_COL = ['#ffb347', '#b58bff', '#9be37a', '#ffd84a', '#c9a5ff', '#fff3a0', '#ff5a4b', '#ffe27a', '#ff3b3b',
+  '#ffd9a0', '#d9b27a', '#ffe27a', '#9bffb0', '#7fd4ff', '#cfd6e8', '#bfe8ff', '#ffffff', '#9ec9ff',
+  '#9be37a', '#7dff9b', '#b6ff4d', '#6bd5a9', '#8bff4d', '#ffb347', '#c8ff7a', '#9ad94a', '#ff8a3a'];
 const SKILL_P = [0, 0.05, 0.10, 0.15, 0.20];   // 본진 해금 레벨별 패시브 스킬 확률
 CATS.forEach((D) => { D.skill = SKILL[D.k]; D.sp = SKILL_P[D.unlock]; });
 const DIFFS = [   // 난이도: 적 본진·적 고양이 체력 배율(내 쪽은 그대로)
@@ -202,14 +243,15 @@ const hpMul = (team) => (team === 1 ? DIFFS[diff].hp : 1);
 const BASE_HP = [1000, 1500, 2000, 2500];   // 내 본진
 const TIER_HP = [2000, 3000, 5000, 7000];      // 적 캣타워 단계별(1단계를 부수면 2단계가 솟는다)
 const TIER_INC = [1, 1.25, 1.5, 1.8];            // 적 캣타워 단계별 골드 수입 배율
-const REINF = [[], [3, 4], [3, 5, 6], [5, 7, 8]];   // 단계가 솟을 때 무료 증원
+const REINF = [[], [3, 4], [3, 5, 6], [5, 7, 8]];   // 종족 안의 번호(0~8)   // 단계가 솟을 때 무료 증원
 const maxHp = (team, lv) => (team ? TIER_HP[lv - 1] : BASE_HP[lv - 1]) * hpMul(team);
 const BASE_INC = [6, 8.5, 11, 14];
 const UP_COST = { base: [120, 260, 480], eco: [90, 170, 300], spd: [90, 170, 300], atk: [90, 170, 300], def: [90, 170, 300] };
-const GOLD_CAP = 600, EDGE = 215, BASE_CX = 140, MAX_CATS = 24;
-const UNLOCK_NAME = ['', '전사·마법사냥이', '용사냥이·삵', '치타·표범'];
+const GOLD_CAP = 600, EDGE = 215, BASE_CX = 140;
+let myRace = 0, foeRace = 3;   // foeRace 3 = 랜덤
+try { const a = parseInt(localStorage.getItem('alleycats.race'), 10), b = parseInt(localStorage.getItem('alleycats.foe'), 10); if (a >= 0 && a < 3) myRace = a; if (b >= 0 && b < 4) foeRace = b; } catch (e) { /* 저장 없이도 진행 가능 */ }
 
-const mkSide = (team = 0) => ({ gold: 60, baseLv: 1, hp: maxHp(team, 1), up: { eco: 0, spd: 0, atk: 0, def: 0 }, hurt: 0 });
+const mkSide = (team = 0) => ({ race: 0, gold: 60, baseLv: 1, hp: maxHp(team, 1), up: { eco: 0, spd: 0, atk: 0, def: 0 }, hurt: 0 });
 let S = [mkSide(0), mkSide(1)];
 const PLAYER_INC = 1.15;   // 플레이어 수입 보정(적 AI는 스테이지 배율만 적용)
 const incomeOf = (t) => BASE_INC[S[t].baseLv - 1] * (1 + 0.2 * S[t].up.eco) * (t ? G.aiMul * TIER_INC[S[1].baseLv - 1] : PLAYER_INC);
@@ -290,7 +332,13 @@ const FURS = [   // 직업별 털색 3종 (소환 때 무작위): [기본, 배/�
   [['#f3c85a', '#fff2c4', '#2a1d12', '#f3c85a'], ['#f6dca0', '#fff8e0', '#3a2a14', '#f6dca0'], ['#e8a840', '#ffe6a8', '#2a1a0a', '#e8a840']],
   [['#e9b24c', '#fff0c8', '#2a1608', '#e9b24c'], ['#d8dcea', '#f6f8ff', '#3c4260', '#d8dcea'], ['#3a3446', '#6e6488', '#14101c', '#3a3446']],
 ].map((list) => list.map(mkFur));
-const furOf = (k, v) => FURS[k][(v || 0) % 3];
+const coats = (m, b, sp) => [[m, b, sp, b], [mix(m, DK, 0.25), b, sp, b], [mix(m, '#ffffff', 0.3), '#ffffff', sp, '#ffffff']].map(mkFur);
+FURS.push(
+  ...[['#d9904a', '#fff1d8', '#a8642a'], ['#8a5632', '#d9b48a', '#4a2c18'], ['#c8863e', '#fff5e6', '#3a2a1c'], ['#e6b85c', '#fff0c4', '#b88a30'], ['#3a3a46', '#ffffff', '#1c1c26'],
+    ['#a8743a', '#e0c090', '#2a1c10'], ['#9aa6b8', '#ffffff', '#46546e'], ['#b8b0a4', '#ece6dc', '#6a645a'], ['#f0e6d8', '#ffffff', '#b8552a']].map(([m, b, sp]) => coats(m, b, sp)),
+  ...[['#7fcf5a', '#d8f2a8', '#3e8a2e'], ['#46b98a', '#c8f2dc', '#1e7a5c'], ['#a8c83a', '#eef5a8', '#5e7a1c'], ['#5aa84a', '#c8e8a0', '#2e6a2a'], ['#8a5ac8', '#e0c8f8', '#4a2a7a'],
+    ['#3aa8a0', '#c8f0e8', '#1e6a68'], ['#b88a4a', '#f0dcb0', '#6a4a1c'], ['#7a7058', '#c8bfa0', '#3a3424'], ['#d8503a', '#ffd8a0', '#7a1e14']].map(([m, b, sp]) => coats(m, b, sp)));
+const furOf = (k, v, race = 0) => FURS[race * 9 + k][(v || 0) % 3];
 const EYE = [   // 홍채: [위(진함), 중간, 아래(밝음)]
   ['#8a4a10', '#e8941a', '#ffd86a'], ['#8a6a00', '#f2d02a', '#fff59a'], ['#2c6a3a', '#5cbf5a', '#c8f09a'],
   ['#2c4a78', '#5b8fd0', '#bfe0ff'], ['#6a3fc0', '#c9a5ff', '#fff6a0'], ['#7a3a08', '#e07a14', '#ffcf4a'],
@@ -302,7 +350,7 @@ const TORSO = [{ rx: 13 }, { rx: 12 }, { rx: 12.5 }, { rx: 14 }, { rx: 13 }, { r
 const ARTSC = 1.75;   // 그림 확대 배율(발바닥 기준)
 const TAILC = [{ n: 8, len: 22, curl: 1.15 }, { n: 8, len: 22, curl: 1.1 }, { n: 8, len: 22, curl: 1.15 }, { n: 8, len: 22, curl: 1.1 }, { n: 8, len: 24, curl: 1.0 }, { n: 8, len: 24, curl: 1.2 }, { n: 4, len: 9, curl: 0.5 }, { n: 9, len: 32, curl: 0.55 }, { n: 9, len: 29, curl: 0.9 }];
 const TOP = [27, 29, 31, 30, 46, 32, 28, 27, 28];
-CATS.forEach((D) => { D.top = (FOOT + TOP[D.k]) * ARTSC - FOOT; });
+CATS.forEach((D) => { D.top = (FOOT + TOP[D.a]) * ARTSC - FOOT; });
 const GOLD = '#e0b13a', PINK = '#ff9bb3';
 const LOD = { on: false };   // 고양이가 많을 때는 음영(클립)을 생략해 프레임을 지킨다
 // 현재 path 를 base 색으로 칠하고 셀 셰이딩(위 밝은 띠 / 아래 어두운 띠)을 얹은 뒤 얇은 외곽선을 긋는다.
@@ -314,10 +362,10 @@ const px = (x, y, col) => { c.fillStyle = col; c.fillRect(x - 0.5, y - 0.5, 1, 1
 const pline = (x0, y0, x1, y1, col, w = 1) => { c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.lineWidth = w; c.strokeStyle = col; c.lineCap = 'round'; c.stroke(); };
 const rose = (x, y, r) => { circ(x, y, r); c.fillStyle = 'rgba(120,70,20,.35)'; c.fill(); c.lineWidth = 1; c.strokeStyle = '#4a2a10'; c.stroke(); };
 const star5 = (x, y, r) => { c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * 0.45 : r; c.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } c.closePath(); c.fillStyle = '#ffd84a'; c.fill(); c.lineWidth = 0.8; c.strokeStyle = '#8a6a00'; c.stroke(); };
-const IDLE = { team: 0, coat: 0, mood: 0, t: 0.6, moving: false, atkP: 0, tw: 0.5, blink: 0 };
+const IDLE = { race: 0, team: 0, coat: 0, mood: 0, t: 0.6, moving: false, atkP: 0, tw: 0.5, blink: 0 };
 function catState(g) {
   const fr = (G && G.fr) || 0, mood = g.hurt > 0 || g.stun > 0 ? 1 : (g.atk > 0 ? 3 : 0);
-  return { team: g.team, coat: g.coat || 0, mood, t: g.anim, moving: g.moving, atkP: g.atk > 0 ? 1 - g.atk / 14 : 0, tw: fr * 0.08 + g.anim, blink: mood === 0 && Math.floor(fr / 8 + g.anim * 5) % 26 === 0 ? 1 : 0 };
+  return { race: CATS[g.k].race, team: g.team, coat: g.coat || 0, mood, t: g.anim, moving: g.moving, atkP: g.atk > 0 ? 1 - g.atk / 14 : 0, tw: fr * 0.08 + g.anim, blink: mood === 0 && Math.floor(fr / 8 + g.anim * 5) % 26 === 0 ? 1 : 0 };
 }
 const swOf = (s) => Math.sin(s.atkP * Math.PI);
 function withLean(s, f) { c.save(); const a = (s.moving ? 0.07 : 0) + swOf(s) * 0.14; if (a) { c.translate(0, 16); c.rotate(a); c.translate(0, -16); } f(); c.restore(); }
@@ -332,7 +380,7 @@ function limb(x0, y0, x1, y1, w0, w1, col) { const dx = x1 - x0, dy = y1 - y0, n
 
 // 꼬리: 굵고 짧게 말려 올라가고 끝에 무늬색. 마디가 위상 tw 로 살랑거린다.
 function pTail(k, s) {
-  const F = furOf(k, s.coat), T = TORSO[k], TC = TAILC[k], ph = s.tw, mv = s.moving ? 1 : 0;
+  const F = furOf(k, s.coat, s.race), T = TORSO[k], TC = TAILC[k], ph = s.tw, mv = s.moving ? 1 : 0;
   const L = [], R = [], seg = TC.len * 0.8 / TC.n; let x = -T.rx * 0.9, y = 12; const pts = [[x, y, 0]];
   for (let i = 1; i <= TC.n; i++) {
     const f = i / TC.n, ang = Math.PI - 0.45 + TC.curl * f * (mv ? 0.8 : 1) * 1.15 + Math.sin(ph - i * 0.75) * 0.34 * f;
@@ -355,7 +403,7 @@ function pCape(k, s) {
 }
 // 다리: 아주 짧고 통통한 발(굵은 외곽선, 단색). 걸을 때 엇갈려 통통 걷는다.
 function pLegs(k, s, far) {
-  const F = furOf(k, s.coat), mv = s.moving ? 1 : 0, ph = s.t * 0.9, hx = far ? -6 : 6, phase = far ? Math.PI : 0;
+  const F = furOf(k, s.coat, s.race), mv = s.moving ? 1 : 0, ph = s.t * 0.9, hx = far ? -6 : 6, phase = far ? Math.PI : 0;
   const sw = Math.sin(ph + phase), lift = Math.max(0, Math.cos(ph + phase)) * 3 * mv, fx_ = hx + sw * 4 * mv, fy = FOOT - 3 - lift;
   limb(hx, 14.5, fx_, fy - 1, 4.6, 4.2, far ? F.sh : F.m);
   ell(fx_ + 1.4, fy + 0.2, 5.2, 3.2); shade(far ? mix(F.sock, DK, 0.12) : F.sock);
@@ -378,7 +426,7 @@ function armPose(k, s, front) {
   return { sx, sy, hx, hy, ang, sw };
 }
 function drawArm(k, s, front) {
-  const F = furOf(k, s.coat), P = armPose(k, s, front), col = front ? F.m : F.sh;
+  const F = furOf(k, s.coat, s.race), P = armPose(k, s, front), col = front ? F.m : F.sh;
   const [ex, ey, hx, hy] = ik(P.sx, P.sy, P.hx, P.hy, 6.4, 6.4, 1);
   limb(P.sx, P.sy, ex, ey, 3.6, 3.2, col); limb(ex, ey, hx, hy, 3.2, 3, col);
   circ(hx, hy, 3.6); shade(front ? F.m : F.sh);
@@ -394,7 +442,7 @@ function pArmF(k, s) {
 // 몸: 통통한 식빵/떡 모양 + 밝은 배. 옷은 없고 무늬만.
 function pBody(k, s) {
   withLean(s, () => {
-    const F = furOf(k, s.coat), T = TORSO[k], rx = T.rx;
+    const F = furOf(k, s.coat, s.race), T = TORSO[k], rx = T.rx;
     const tp = () => { c.beginPath(); c.ellipse(0, 9.8, rx, 9, 0, 0, TAU); };
     tp(); shade(F.m);
     c.save(); tp(); c.clip();
@@ -423,7 +471,7 @@ function dotEye(x, y, side, m, blink) {
 }
 function pHead(k, s) {
   withLean(s, () => {
-    const F = furOf(k, s.coat), m = s.mood, T = TEAM[s.team], fw = Math.sin(s.tw * 1.1) * 2, e = k >= 7 ? 0.8 : 1;
+    const F = furOf(k, s.coat, s.race), m = s.mood, T = TEAM[s.team], fw = Math.sin(s.tw * 1.1) * 2, e = k >= 7 ? 0.8 : 1;
     c.save(); c.translate(3, -6);
     // 귀: 머리 윗모서리의 작은 삼각형
     c.beginPath(); c.moveTo(-15, -4); c.lineTo(-12.4, -21 * e); c.lineTo(-3, -11.4); c.closePath(); shade(F.m);
@@ -570,7 +618,7 @@ function catParts(k) {
   P.push({ n: 'weapon', ox: 14, oy: 8, w: k === 5 ? 40 : 22, h: 10, lunge: 0.8, noPiece: [0, 6, 7, 8].includes(k) ? 1 : 0, draw: (s) => pWeapon(k, s) });
   return P;
 }
-const PARTS = CATS.map((D) => catParts(D.k));
+const PARTS = CATS.map((D) => catParts(D.a));
 function drawSprites(k, st, bob, lunge) {
   c.save(); c.translate(0, FOOT); c.scale(ARTSC, ARTSC); c.translate(0, -FOOT);
   for (const p of PARTS[k]) { c.save(); c.translate(p.lunge ? lunge * p.lunge : 0, p.still ? 0 : -bob); p.draw(st); c.restore(); }
@@ -649,8 +697,8 @@ function newGame() {
   const ground = Bodies.rectangle(W / 2, GROUND + 60, W * 4, 120, { isStatic: true, friction: 1, restitution: 0.05, collisionFilter: { category: CATC.ground, mask: 0xFFFF } });
   mkBody(ground, { kind: 'ground' });
   Composite.add(engine.world, ground);
-  S = [mkSide(0), mkSide(1)];
-  G = { state: 'title', t: 0, ts: 1, slowT: 0, overT: 0, winner: -1, cd: {}, special: 0.4, special1: 0.4, cats: [], ai: { timer: 3 }, aiMul: 1.2, stats: { kills: 0, lost: 0 }, lastText: 0, deadBase: [false, false], hitQ: [], skT: 0, skN: Array(9).fill(0), force: 0 };
+  S = [mkSide(0), mkSide(1)]; S[0].race = myRace; S[1].race = foeRace === 3 ? (Math.random() * 3) | 0 : foeRace;
+  G = { state: 'title', t: 0, ts: 1, slowT: 0, overT: 0, winner: -1, cd: {}, special: 0.4, special1: 0.4, cats: [], ai: { timer: 3 }, aiMul: 1.2, stats: { kills: 0, lost: 0 }, lastText: 0, deadBase: [false, false], hitQ: [], skT: 0, skN: Array(27).fill(0), force: 0, zones: [] };
   G.st = Object.assign({ boss: DIFFS[diff].boss || 0 }, AIP); G.aiMul = DIFFS[diff].inc; S[1].gold = AIP.gold;
   ensureBG();
   parts.length = 0; texts.length = 0; shots.length = 0; vfx.length = 0;
@@ -673,18 +721,22 @@ function throttledPop(x, y, str, color) { const n = performance.now(); if (n - G
 
 /* ---------------- 피해 · 파괴 ---------------- */
 const sideOf = (u) => S[u.g.team];
-function hitCat(t, dmg, dir, crit) {
-  const g = t.g; if (g.dead) return;
+function hitCat(t, dmg, dir, crit, src) {
+  const g = t.g; if (g.dead) return; const TD = CATS[g.k];
+  if (g.hid && TD.tunnel) return;                  // 땅굴 이동 중에는 맞지 않는다
   dmg *= 1 + Math.max(0, G.t - 140) / 80;       // 교착 방지: 오래 끌면 모두 더 세게 때린다
-  const d = dmg * (1 - 0.12 * S[g.team].up.def) * (CATS[g.k].dr || 1) * (g.shieldT > 0 ? 0.5 : 1);
+  let d = dmg * (1 - 0.12 * S[g.team].up.def) * (TD.dr || 1) * (g.shieldT > 0 ? 0.5 : 1) * (g.guardT > 0 ? g.guardMul : 1) * (g.armorT > 0 ? 1.15 : 1);
+  const tot = d; g.noHit = 180;
+  if (g.sh > 0) { const ab = Math.min(g.sh, d); g.sh -= ab; d -= ab; addV('ring', t.position.x, t.position.y - 8, { life: 10, size: 34, color: '#9ec9ff' }); }
   g.hp -= d; g.hurt = 12; g.squash = 8;
-  dmgNum(t, d, crit); addV('ring', t.position.x, t.position.y - 8, { life: 12, size: 26, color: '#fff' });
+  dmgNum(t, tot, crit); addV('ring', t.position.x, t.position.y - 8, { life: 12, size: 26, color: '#fff' });
   addV('flash', t.position.x, t.position.y - 8, { life: 9, size: crit ? 56 : 38, color: crit ? '#ff9b8a' : '#fff6c8' });
   fx('spark', t.position.x, t.position.y - 8, crit ? 10 : 4, dir, crit ? '#ff6a4d' : '#ffd84a');
   if (crit) { pop(t.position.x, t.position.y - 44, '치명타!', '#ff8a8a', 34); G.slowT = Math.max(G.slowT, 4); }
+  if (TD.reflect && src && src !== t && !src.g.dead) { hitCat(src, tot * TD.reflect, -dir); fx('spark', src.position.x, src.position.y - 8, 3, -dir, '#c8ff7a'); }
   if (g.hp <= 0) killCat(t, dir);
 }
-function kickCat(b, vx, vy, stun) { if (b.g.dead) return; b.g.stun = stun; Body.setVelocity(b, { x: vx, y: vy }); }
+function kickCat(b, vx, vy, stun) { if (b.g.dead || CATS[b.g.k].noKick) return; b.g.stun = stun; Body.setVelocity(b, { x: vx, y: vy }); }
 function dmgBase(team, dmg) {
   const s = S[team]; if (G.state !== 'play' || s.inv > 0) return;
   dmg *= 1 + Math.max(0, G.t - 120) / 35;       // 오래 끌수록 본진이 약해진다(교착 방지)
@@ -705,8 +757,8 @@ function nextTier() {   // 적 캣타워: 부수면 다음 단계가 새로 솟�
     Body.setVelocity(b, { x: rnd(-8, 8), y: -rnd(5, 16) }); Body.setAngularVelocity(b, rnd(-.5, .5)); Composite.add(engine.world, b);
   }
   fx('dust', cx, GROUND - 40, 14); fx('star', cx, GROUND - 90, 10); cam.shake = Math.max(cam.shake, 20); G.slowT = Math.max(G.slowT, 24);
-  pop(cx, GROUND - 170, `적 캣타워 ${s.baseLv}단계!`, '#ffcf5a', 50); if (UNLOCK_NAME[s.baseLv - 1]) throttledPop(cx, GROUND - 230, `적 ${UNLOCK_NAME[s.baseLv - 1]} 등장`, '#ff9b8a');
-  REINF[s.baseLv - 1].forEach((k, i) => later(20 + i * 22, () => { if (G.state === 'play') spawnCat(1, k, true); }));
+  pop(cx, GROUND - 170, `적 캣타워 ${s.baseLv}단계!`, '#ffcf5a', 50); if (RACES[s.race].unlockNames[s.baseLv - 1]) throttledPop(cx, GROUND - 230, `적 ${RACES[s.race].unlockNames[s.baseLv - 1]} 등장`, '#ff9b8a');
+  REINF[s.baseLv - 1].forEach((k, i) => later(20 + i * 22, () => { if (G.state === 'play') spawnCat(1, s.race * 9 + k, true); }));
   later(24, () => pop(cx - 80, GROUND - 120, '적 증원 등장!', '#ff9b8a', 36));
   sfx('boom');
 }
@@ -719,14 +771,14 @@ function killCat(u, dir) {
     if (p.noPiece) continue;
     const b = Bodies.rectangle(u.position.x + p.ox * sc * g.face, u.position.y + yoff + p.oy * sc, Math.max(8, p.w * sc), Math.max(6, p.h * sc), { restitution: 0.45, friction: 0.6, density: 0.001,
       collisionFilter: { category: CATC.debris, mask: CATC.ground } });
-    mkBody(b, { kind: 'piece', def: p, coat: g.coat, k: g.k, flip: g.face, team: g.team, sc, life: 300 });
+    mkBody(b, { kind: 'piece', def: p, coat: g.coat, race: D.race, k: g.k, flip: g.face, team: g.team, sc, life: 300 });
     const up = p.head ? rnd(11, 16) : rnd(4, 11);
     Body.setVelocity(b, { x: dir * rnd(1, 6) + rnd(-3, 3), y: -up }); Body.setAngularVelocity(b, rnd(-.5, .5));
     Composite.add(engine.world, b);
   }
   fx('star', u.position.x, u.position.y - 10, 4); fx('dust', u.position.x, u.position.y + 10, 3);
-  pop(u.position.x, u.position.y - 36, g.k === 4 ? '크아앙…!' : pick(['냐앙!', '끼얏!', '냥…', '야옹~!', '캬악!']), g.team ? '#ffb7ad' : '#a9c8ff');
-  meow(g.k, 0.2); sfx('pop');
+  pop(u.position.x, u.position.y - 36, D.race === 1 ? pick(['깨갱!', '왈…', '낑!', '컹~!']) : D.race === 2 ? pick(['끼익!', '칙…', '슈욱!', '캭!']) : (g.k === 4 ? '크아앙…!' : pick(['냐앙!', '끼얏!', '냥…', '야옹~!', '캬악!'])), g.team ? '#ffb7ad' : '#a9c8ff');
+  meow(CATS[g.k].a, 0.2); sfx('pop');
 }
 
 /* ---------------- 폭발 · 마법 · 필살기 ---------------- */
@@ -752,15 +804,46 @@ function castOrb(u, tgt) {
   g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1) * (g.frenzyT > 0 ? 0.5 : 1); g.atk = ATK_T;
   const edgeEn = g.team ? EDGE : W - EDGE, x0 = u.position.x + g.face * 16, y0 = u.position.y - (arrow ? 6 : 30);
   shots.push({ kind: arrow ? 'arrow' : 'orb', base: !!tgt.base, x0, y0, x1: tgt.base ? edgeEn : tgt.body.position.x, y1: tgt.base ? GROUND - (arrow ? 36 : 40) : tgt.body.position.y - (arrow ? 4 : 0),
-    t: arrow ? -5 : -14, dur: arrow ? 24 : 34, team: g.team, dmg: D.atk * (1 + 0.15 * s.up.atk), tb: tgt.base ? null : tgt.body, x: x0, y: y0 });
+    t: arrow ? -5 : -14, dur: arrow ? 24 : 34, team: g.team, dmg: D.atk * (1 + 0.15 * s.up.atk), tb: tgt.base ? null : tgt.body, x: x0, y: y0, col: D.shotCol, fxk: D.shotFx, rad: D.shotRad });
   if (!arrow) addV('charge', u.position.x + g.face * 18, u.position.y - 26, { life: 16, size: 26 });
   sfx('shoot');
   if (rollSkill(g)) skillRanged(u, tgt, D.atk * (1 + 0.15 * s.up.atk));
 }
+function shotStatus(s) {   // 산성(방어 감소) · 독(출혈) · 화염(불바닥)
+  const r = (s.rad || 80) + 10;
+  for (const e of G.cats) if (e.g.team !== s.team && !e.g.dead && Math.hypot(e.position.x - s.x1, (e.position.y - s.y1) * 0.6) < r) {
+    if (s.fxk === 'acid') e.g.armorT = 180; else { e.g.bleed = 150; e.g.bleedDmg = Math.max(1.5, s.dmg * 0.18); }
+  }
+  if (s.fxk === 'fire') addZone(s.x1, 90, 2.5, s.team, s.dmg * 0.25, 'fire', '#ff8a3a');
+}
+function addZone(x, r, secs, team, dmg, fxk, col) { G.zones.push({ x, r, life: secs * 60, max: secs * 60, tk: 0, team, dmg, fxk, col }); }
+function updateZones(ts) {
+  for (const z of G.zones) {
+    z.life -= ts; z.tk -= ts;
+    if (z.tk <= 0) {
+      z.tk = 24;
+      for (const e of G.cats.slice()) if (e.g.team !== z.team && !e.g.dead && Math.abs(e.position.x - z.x) < z.r && !(e.g.hid && CATS[e.g.k].tunnel)) {
+        hitCat(e, z.dmg, 0); if (e.g.dead) continue;
+        if (z.fxk === 'acid') e.g.armorT = 150; else if (z.fxk === 'poison') { e.g.bleed = Math.max(e.g.bleed || 0, 60); e.g.bleedDmg = Math.max(e.g.bleedDmg || 0, 1.5); }
+        fx('spark', e.position.x, e.position.y - 4, 2, 0, z.col);
+      }
+    }
+  }
+  G.zones = G.zones.filter((z) => z.life > 0);
+}
+function drawZones() {
+  for (const z of G.zones) {
+    const k = z.life / z.max, a = Math.min(1, k * 3) * 0.5;
+    c.save(); c.translate(z.x, GROUND - 2); c.globalAlpha = a * 0.55; c.beginPath(); c.ellipse(0, 0, z.r, z.r * 0.2, 0, 0, TAU); c.fillStyle = z.col; c.fill();
+    c.globalAlpha = a; c.lineWidth = 3; c.strokeStyle = z.col; c.stroke();
+    if (!LOD.on) for (let i = 0; i < 5; i++) { const ph = ((G.fr || 0) * 0.03 + i * 0.37) % 1; c.globalAlpha = a * (1 - ph); circ(Math.sin(i * 12.3) * z.r * 0.8, -ph * 46, 3 + i % 3); c.fillStyle = z.col; c.fill(); }
+    c.restore();
+  }
+}
 function drawArrow(s) {
   const a = Math.atan2(s.y - s.py, s.x - s.px) || (s.team ? Math.PI : 0);
   c.save(); c.translate(s.x, s.y); c.rotate(a);
-  if (!LOD.on) { c.globalAlpha = 0.3; line(-30, 0, -8, 0, 5, '#9bffb0'); c.globalAlpha = 0.55; circ(14, 0, 7); c.fillStyle = '#7dff9b'; c.fill(); c.globalAlpha = 1; }
+  if (!LOD.on) { c.globalAlpha = 0.3; line(-30, 0, -8, 0, 5, s.col || '#9bffb0'); c.globalAlpha = 0.55; circ(14, 0, 7); c.fillStyle = s.col || '#7dff9b'; c.fill(); c.globalAlpha = 1; }
   line(-14, 0, 10, 0, 4, INK); line(-14, 0, 10, 0, 2, '#e9d2a1'); tri(10, -4.8, 19, 0, 10, 4.8); fs('#d9ffe0', 1.6);
   line(-14, 0, -19, -3.8, 2.4, '#ff6a4d'); line(-14, 0, -19, 3.8, 2.4, '#ffd84a'); line(-10, 0, -14, -3.2, 1.8, '#ff6a4d'); line(-10, 0, -14, 3.2, 1.8, '#ffd84a'); c.restore();
 }
@@ -777,6 +860,22 @@ function dropCan(team = 0) {
   Composite.add(engine.world, b);
   tone(900, 200, 0.4, 'sine', 0.2);
 }
+function useSpecial(team) {
+  if (!G || G.state !== 'play') return;
+  if ((team ? G.special1 : G.special) < 1) return;
+  const r = S[team].race;
+  if (r === 0) { dropCan(team); return; }
+  if (team) G.special1 = 0; else G.special = 0;
+  const mine = G.cats.filter((u) => u.g.team === team && !u.g.dead);
+  if (r === 1) {   // 수호 결계: 아군 전원 보호막 가득 + 5초 피해 -40%
+    for (const u of mine) { u.g.sh = u.g.shMax; u.g.guardT = 300; u.g.guardMul = 0.6; addV('dome', u.position.x, u.position.y + 6, { life: 50, size: 50 + CATS[u.g.k].w * 0.4, color: '#9ec9ff' }); }
+    const x = mine.length ? mine.reduce((a, u) => a + u.position.x, 0) / mine.length : (team ? W - 330 : 330);
+    pop(x, GROUND - 200, team ? '적 수호 결계!' : '수호 결계!', '#bfe8ff', 48); cam.shake = Math.max(cam.shake, 8); sfx('lvup');
+  } else {         // 산란 폭주: 새끼 도마뱀 6마리 무료 소환
+    for (let i = 0; i < 6; i++) later(i * 6, () => { if (G.state === 'play') spawnCat(team, 18, true, true); });
+    const x = team ? W - EDGE - 40 : EDGE + 40; pop(x, GROUND - 150, team ? '적 산란 폭주!' : '산란 폭주!', '#c8ff7a', 46); sfx('lvup');
+  }
+}
 function onCollide(e) {
   for (const p of e.pairs) {
     for (const [a, o] of [[p.bodyA, p.bodyB], [p.bodyB, p.bodyA]]) {
@@ -790,22 +889,23 @@ function onCollide(e) {
 }
 
 /* ---------------- 소환 · 강화 · 전투 ---------------- */
-function spawnCat(team, k, free = false) {
+function spawnCat(team, k, free = false, noTwin = false) {
   const D = CATS[k], s = S[team];
-  if (s.baseLv < D.unlock || (!free && s.gold < D.cost) || G.cats.filter((u) => u.g.team === team).length >= MAX_CATS) return false;
+  if (D.race !== s.race || s.baseLv < D.unlock || (!free && s.gold < D.cost) || G.cats.filter((u) => u.g.team === team).length >= RACES[s.race].max) return false;
   if (!free) s.gold -= D.cost;
   const x = (team ? W - EDGE + 24 : EDGE - 24) + rnd(-8, 8);
   const b = Bodies.rectangle(x, GROUND - D.h / 2 - 1, D.w * 0.8, D.h, { density: 0.002, friction: 0.05, frictionAir: 0.02, restitution: 0, collisionFilter: { category: CATC.unit, mask: CATC.ground } });
   Body.setInertia(b, Infinity);
-  mkBody(b, { kind: 'cat', k, team, coat: (Math.random() * 3) | 0, hp: D.hp * hpMul(team), max: D.hp * hpMul(team), cd: D.cd * 0.5, face: team ? -1 : 1, anim: rnd(0, 6), hurt: 0, atk: 0, moving: false, stun: 0, spin: 0,
+  mkBody(b, { kind: 'cat', k, team, coat: (Math.random() * 3) | 0, hp: D.hp * hpMul(team), max: D.hp * hpMul(team), sh: (D.sh || 0) * hpMul(team), shMax: (D.sh || 0) * hpMul(team), noHit: 0, hid: !!D.stealth, guardT: 0, guardMul: 1, armorT: 0, chillT: 0, tauntT: 0, auT: 0, boostT: 0, cd: D.cd * 0.5, face: team ? -1 : 1, anim: rnd(0, 6), hurt: 0, atk: 0, moving: false, stun: 0, spin: 0,
     lane: rnd(-14, 14), jit: rnd(-6, 6), first: true, w: D.w, h: D.h, dead: false });
   Composite.add(engine.world, b); G.cats.push(b);
   fx('dust', x, GROUND - 4, 3);
-  if (team === 0) { sfx('spawn'); meow(k, 0.12); }
+  if (team === 0) { sfx('spawn'); meow(D.a, 0.12); }
+  if (D.twin && !noTwin) spawnCat(team, k, true, true);
   return true;
 }
 const upLevel = (s, key) => (key === 'base' ? s.baseLv - 1 : s.up[key]);
-function upCost(s, key) { const lv = upLevel(s, key); return lv >= 3 ? null : UP_COST[key][lv]; }
+function upCost(s, key) { const lv = upLevel(s, key); return lv >= 3 ? null : Math.round(UP_COST[key][lv] * (s.race === 0 && key !== 'base' ? 0.9 : 1)); }
 function buy(team, key) {
   const s = S[team], cost = upCost(s, key);
   if (cost == null || s.gold < cost || G.state !== 'play') return false;
@@ -815,7 +915,7 @@ function buy(team, key) {
     const mx = maxHp(team, s.baseLv); s.hp = Math.min(mx, s.hp + (mx - prev) + mx * 0.3);
     const cx = team ? W - BASE_CX : BASE_CX;
     pop(cx, GROUND - 190, `본진 Lv${s.baseLv}!`, '#ffcf5a', 44); fx('star', cx, GROUND - 100, 10); cam.shake = Math.max(cam.shake, 8);
-    if (UNLOCK_NAME[s.baseLv - 1]) throttledPop(cx, GROUND - 240, `${UNLOCK_NAME[s.baseLv - 1]} 해금`, '#9df0cf');
+    if (RACES[s.race].unlockNames[s.baseLv - 1]) throttledPop(cx, GROUND - 240, `${RACES[s.race].unlockNames[s.baseLv - 1]} 해금`, '#9df0cf');
     sfx('lvup');
   } else { s.up[key]++; if (team === 0) sfx('buy'); }
   return true;
@@ -845,10 +945,10 @@ function slashFx(name, x, y, fc, crit) {
 }
 function bigSlash(u) {
   const g = u.g, D = CATS[g.k], fc = g.face, y = u.position.y + D.h / 2 - FOOT * D.sc + g.lane;
-  addV('crescent', u.position.x + fc * 30, y - 20, { dir: fc, life: 20, size: g.k === 8 ? 120 : 84 });
+  addV('crescent', u.position.x + fc * 30, y - 20, { dir: fc, life: 20, size: D.a === 8 ? 120 : 84 });
   const gx = u.position.x + fc * 70, pts = []; for (let i = -5; i <= 5; i++) pts.push([i * 15 + rnd(-3, 3), i % 2 ? rnd(2, 8) : rnd(-2, 3)]);
   addV('crack', gx, GROUND + 2, { life: 40, pts }); fx('dust', gx, GROUND, 6, fc); fx('spark', gx, GROUND - 6, 8, fc, '#ffd84a');
-  cam.shake = Math.max(cam.shake, g.k === 8 ? 16 : 12); G.slowT = Math.max(G.slowT, 8); sfx('heavy');
+  cam.shake = Math.max(cam.shake, D.a === 8 ? 16 : 12); G.slowT = Math.max(G.slowT, 8); sfx('heavy');
 }
 function roar(u) {
   const g = u.g;
@@ -913,7 +1013,7 @@ function drawVfx() {
       const sc = k < 0.15 ? 0.5 + k / 0.15 * 0.9 : 1.4 - Math.min(0.4, (k - 0.15) * 0.5); c.scale(sc, sc); c.font = `${v.size}px Jua, sans-serif`; c.textAlign = 'center'; c.lineWidth = 8; c.strokeStyle = INK; c.strokeText(v.text, 0, 0); c.fillStyle = v.color; c.fillText(v.text, 0, 0); c.lineWidth = 1.5; c.strokeStyle = '#fff'; c.strokeText(v.text, 0, 0);
     } else if (t === 'ghost') {
       c.globalAlpha = 0.35 * (v.life / v.max); c.scale(v.face * v.sc, v.sc);
-      drawSprites(v.k, Object.assign({}, IDLE, { team: v.team, moving: true, t: 0.6 }), 0, 0);
+      drawSprites(v.k, Object.assign({}, IDLE, { race: CATS[v.k].race, team: v.team, moving: true, t: 0.6 }), 0, 0);
     }
     c.restore();
   }
@@ -938,12 +1038,12 @@ function skillMelee(u, tg, dmg) {   // 근접 유닛 스킬
   const team = g.team, foes = () => foesOf(g), hitT = (m, crit) => { if (tb && !tb.g.dead) hitFoe(tb, dmg * m, fc, crit); else if (tg.base) dmgBase(1 - team, dmg * m); };
   skillFx(u, true);
   switch (g.k) {
-    case 0:   // 냥냥 연타
+    case 0: case 18:   // 냥냥 연타 / 물어뜯기
       for (let i = 0; i < 3; i++) later(5 + i * 6, () => { hitT(0.8, false); addV('claw', tx + rnd(-10, 10), ty + rnd(-8, 8), { dir: fc, life: 16, col2: pick(['#ffb347', '#ff8a3a', '#ffd84a']) }); addV('flash', tx, ty, { life: 8, size: 40, color: '#ffe27a' }); fx('star', tx, ty, 3); sfx('hit'); });
       break;
-    case 1:   // 그림자 습격: 뒤로 순간이동 + 3배 치명타
+    case 1: case 19:   // 그림자 습격 / 위장 기습: 뒤로 순간이동 + 3배 치명타
       if (tb && !tb.g.dead) {
-        for (let i = 0; i < 3; i++) addV('ghost', ux + (tx - ux) * i / 3, u.position.y + CATS[1].h / 2 - FOOT * CATS[1].sc + g.lane, { life: 16 - i * 2, k: 1, face: fc, sc: CATS[1].sc, team });
+        for (let i = 0; i < 3; i++) addV('ghost', ux + (tx - ux) * i / 3, u.position.y + D.h / 2 - FOOT * D.sc + g.lane, { life: 16 - i * 2, k: g.k, face: fc, sc: D.sc, team });
         fx('dust', ux, uy, 8); fx('spark', ux, uy, 8, 0, '#b58bff');
         Body.setPosition(u, { x: tx + fc * 30, y: u.position.y }); g.first = false;
         addV('ring', tx + fc * 30, uy, { life: 18, size: 90, color: '#b58bff' });
@@ -972,13 +1072,66 @@ function skillMelee(u, tg, dmg) {   // 근접 유닛 스킬
       for (let i = 0; i < 6; i++) fx('spark', ux + rnd(-20, 20), uy, 1, 0, '#7dff9b');
       hitT(1.0, false); addV('claw', tx, ty, { dir: fc, life: 16, col2: '#ff3b3b' });
       break;
-    case 7: {   // 섬광 돌진
+    case 7: case 15: {   // 섬광 돌진 / 눈보라 돌진
+      const ice = g.k === 15;
       const lim = g.team ? EDGE + 40 : W - EDGE - 40, nx = clamp(ux + fc * 170, Math.min(ux, lim), Math.max(ux, lim));
-      for (let i = 0; i < 5; i++) addV('ghost', ux + (nx - ux) * i / 5, u.position.y + CATS[7].h / 2 - FOOT * CATS[7].sc + g.lane, { life: 22 - i * 3, k: 7, face: fc, sc: CATS[7].sc, team });
+      for (let i = 0; i < 5; i++) addV('ghost', ux + (nx - ux) * i / 5, u.position.y + D.h / 2 - FOOT * D.sc + g.lane, { life: 22 - i * 3, k: g.k, face: fc, sc: D.sc, team });
       addV('dashline', (ux + nx) / 2, uy, { life: 18, size: Math.abs(nx - ux) + 60, dir: fc, color: '#ffe27a' });
-      for (const e of foes()) { const dx = (e.position.x - ux) * fc, len = (nx - ux) * fc; if (dx > -30 && dx < len + 40) { hitFoe(e, dmg * 1.3, fc, true); addV('flash', e.position.x, e.position.y - 8, { life: 10, size: 50, color: '#ffe27a' }); } }
+      for (const e of foes()) { const dx = (e.position.x - ux) * fc, len = (nx - ux) * fc; if (dx > -30 && dx < len + 40) { hitFoe(e, dmg * 1.3, fc, true); if (ice && !e.g.dead) { e.g.stun = 110; e.g.chillT = 240; } addV('flash', e.position.x, e.position.y - 8, { life: 10, size: 50, color: ice ? '#bfe8ff' : '#ffe27a' }); } }
       Body.setPosition(u, { x: nx, y: u.position.y }); fx('dust', ux, GROUND - 6, 8, -fc); fx('spark', nx, uy, 10, fc, '#ffd84a'); break;
     }
+    case 9: {   // 충성 돌격: 짧게 돌진 + 1.8배 + 넉백
+      const nx = tb ? tx - fc * 26 : ux + fc * 100;
+      for (let i = 0; i < 3; i++) addV('ghost', ux + (nx - ux) * i / 3, u.position.y + D.h / 2 - FOOT * D.sc + g.lane, { life: 14 - i * 2, k: g.k, face: fc, sc: D.sc, team });
+      addV('dashline', (ux + nx) / 2, uy, { life: 16, size: Math.abs(nx - ux) + 50, dir: fc, color: '#ffd9a0' }); Body.setPosition(u, { x: nx, y: u.position.y });
+      later(4, () => { hitT(1.8, true); if (tb && !tb.g.dead) kickCat(tb, fc * 7, -6, 24); fx('spark', tx, ty, 8, fc, '#ffd9a0'); });
+      break;
+    }
+    case 10: case 23: {   // 땅굴 기습 / 도약 강습: 적 후열로 이동해 강타
+      const cand = foes().filter((e) => (e.position.x - ux) * fc > 0 && (e.position.x - ux) * fc < 340), far = cand.length ? cand.reduce((a, b) => ((b.position.x - ux) * fc > (a.position.x - ux) * fc ? b : a)) : tb;
+      if (far && !far.g.dead) {
+        const dig = g.k === 10; fx('dust', ux, GROUND - 4, 8); addV('ring', ux, uy, { life: 16, size: 80, color: SKILL_COL[g.k], sq: 0.4 });
+        Body.setPosition(u, { x: far.position.x - fc * 30, y: u.position.y }); if (!dig) Body.setVelocity(u, { x: 0, y: -9 });
+        later(4, () => { if (far.g.dead) return; hitFoe(far, dmg * (dig ? 2.5 : 2), fc, true); if (!dig) far.g.stun = 50; fx('dust', far.position.x, GROUND - 4, 8); addV('xslash', far.position.x, far.position.y - 10, { dir: fc, life: 18, color: SKILL_COL[g.k] }); });
+      } else hitT(2, true);
+      break;
+    }
+    case 12: {   // 치유의 빛: 주변 아군 25% 회복
+      addV('dome', ux, u.position.y + 6, { life: 50, size: 150, color: '#9bffb0' });
+      for (const a of G.cats) if (a.g.team === team && !a.g.dead && Math.abs(a.position.x - ux) < 180) { a.g.hp = Math.min(a.g.max, a.g.hp + a.g.max * 0.25); a.g.sh = Math.min(a.g.shMax, a.g.sh + a.g.shMax * 0.25); addV('flash', a.position.x, a.position.y - 10, { life: 14, size: 44, color: '#9bffb0' }); pop(a.position.x, a.position.y - 50, '+' + Math.round(a.g.max * 0.25), '#7dff9b', 26); }
+      hitT(1.0, false);
+      break;
+    }
+    case 14: {   // 철벽 진형: 주변 아군 피해 -30% + 도발
+      g.tauntT = 240; addV('dome', ux, u.position.y + 6, { life: 60, size: 130, color: '#cfd6e8' });
+      for (const a of G.cats) if (a.g.team === team && !a.g.dead && Math.abs(a.position.x - ux) < 220) { a.g.guardT = 240; a.g.guardMul = 0.7; addV('dome', a.position.x, a.position.y + 6, { life: 36, size: 46, color: '#cfd6e8' }); }
+      hitT(1.0, false); addV('wave', ux + fc * 30, uy, { dir: fc, life: 22, size: 90 });
+      break;
+    }
+    case 16:   // 섬광 연격: 순간 5연타
+      for (let i = 0; i < 5; i++) later(3 + i * 4, () => { hitT(0.7, i === 4); addV('xslash', tx + rnd(-10, 10), ty + rnd(-8, 8), { dir: i % 2 ? -fc : fc, life: 14, color: '#ffffff' }); fx('spark', tx, ty, 4, fc, '#ffffff'); sfx('hit'); });
+      break;
+    case 17: {   // 수호신의 포효: 아군 보호막 가득 + 적 기절
+      roar(u); addV('dome', ux, u.position.y + 6, { life: 60, size: 190, color: '#9ec9ff' });
+      for (const a of G.cats) if (a.g.team === team && !a.g.dead && Math.abs(a.position.x - ux) < 300) { a.g.sh = a.g.shMax; addV('flash', a.position.x, a.position.y - 10, { life: 14, size: 44, color: '#9ec9ff' }); }
+      hitT(1.0, false);
+      break;
+    }
+    case 21:   // 껍질 웅크리기: 3초 피해 -70%
+      g.guardT = 180; g.guardMul = 0.3; addV('dome', ux, u.position.y + 6, { life: 50, size: 90, color: '#6bd5a9' }); hitT(1.0, false);
+      break;
+    case 24: {   // 가시 폭발: 주변 광역 + 출혈
+      explode(ux, uy, team, dmg * 1.6, 105, 1.2, false);
+      for (const e of foes()) if (Math.abs(e.position.x - ux) < 105 && !e.g.dead) { e.g.bleed = 120; e.g.bleedDmg = Math.max(1.5, D.atk * 0.25); }
+      for (let i = 0; i < 10; i++) fx('spark', ux + rnd(-30, 30), uy + rnd(-10, 10), 1, 0, '#c8ff7a');
+      break;
+    }
+    case 25:   // 맹독 포식: 2.5배, 처치하면 체력 30% 회복
+      later(4, () => {
+        if (tb && !tb.g.dead) { hitFoe(tb, dmg * 2.5, fc, true); if (tb.g.dead) { g.hp = Math.min(g.max, g.hp + g.max * 0.3); pop(ux, u.position.y - 70, '+' + Math.round(g.max * 0.3), '#7dff9b', 34); } else { tb.g.bleed = 180; tb.g.bleedDmg = Math.max(1.5, D.atk * 0.2); } addV('claw', tx, ty, { dir: fc, life: 16, col2: '#9ad94a' }); }
+        else if (tg.base) dmgBase(1 - team, dmg * 2.5);
+      });
+      break;
     case 8: {   // 흑염 대참격
       for (const [sz, col] of [[150, '#ff3b3b'], [118, '#7a1f4e'], [84, '#ffd0c8']]) addV('crescent', ux + fc * 40, uy - 10, { dir: fc, life: 26, size: sz, color: col });
       later(6, () => {
@@ -1002,6 +1155,14 @@ function skillRanged(u, tg, dmg) {   // 원거리 유닛 스킬 (궁수: 화살�
         for (const e of foesOf(g)) if (Math.abs(e.position.x - x) < 42) hitFoe(e, dmg * 0.7, fc, false);
         if (Math.abs(x - (team ? EDGE : W - EDGE)) < 70) dmgBase(1 - team, dmg * 0.7); sfx('hit'); });
     }
+  } else if (g.k === 11) {   // 관통탄: 일직선 모든 적 1.5배
+    const ux = u.position.x, uy = u.position.y - 14;
+    addV('bolt', ux + fc * 20, uy, { life: 14, to: [ux + fc * 460, uy], color: '#ffe27a' }); addV('ring', ux + fc * 24, uy, { life: 12, size: 50, color: '#ffe27a' });
+    later(5, () => { for (const e of foesOf(g)) { const dx = (e.position.x - ux) * fc; if (dx > 0 && dx < 470) { hitFoe(e, dmg * 1.5, fc, false); fx('spark', e.position.x, e.position.y - 8, 4, fc, '#ffe27a'); } } });
+  } else if (g.k === 13) { addZone(tx, 110, 3, team, dmg * 0.5, 'psy', '#7fd4ff'); addV('ring', tx, GROUND - 6, { life: 24, size: 220, color: '#bfe8ff', sq: 0.3 }); addV('rune', tx, GROUND + 4, { life: 40, size: 110 });
+  } else if (g.k === 20) { addZone(tx, 80, 2, team, dmg * 0.6, 'acid', '#a6ff4d'); addV('ring', tx, GROUND - 6, { life: 20, size: 150, color: '#c8ff7a', sq: 0.3 });
+  } else if (g.k === 22) { addZone(tx, 130, 4, team, dmg * 0.4, 'poison', '#8bff4d'); addV('ring', tx, GROUND - 6, { life: 24, size: 250, color: '#d8ff9a', sq: 0.3 });
+  } else if (g.k === 26) { addZone(tx, 150, 3, team, dmg * 0.5, 'fire', '#ff8a3a'); for (let i = -1; i <= 1; i++) addV('flash', tx + i * 70, GROUND - 30, { life: 18, size: 80, color: '#ff8a3a' }); cam.shake = Math.max(cam.shake, 10);
   } else if (g.k === 4) {   // 썬더볼트: 하늘에서 번개 3줄기가 연달아 내리꽂는 광역 마법
     for (let i = 0; i < 3; i++) {
       const x = clamp(tx + (i - 1) * 78, 120, W - 120);
@@ -1032,16 +1193,17 @@ function swing(u, tg) {
     for (const e of G.cats.slice()) {
       if (e.g.team === g.team || e.g.dead) continue;
       const dx = (e.position.x - u.position.x) * fc;
-      if (dx > -12 && dx < D.rng + 34 && n < 4) { hitCat(e, dmg, fc); if (!e.g.dead) kickCat(e, fc * 5, -7, 22); n++; }
+      if (dx > -12 && dx < D.rng + 34 && n < 4) { hitCat(e, dmg, fc, false, u); if (!e.g.dead) kickCat(e, fc * 5, -7, 22); if (D.slow && !e.g.dead) e.g.chillT = 120; n++; }
     }
   } else {
-    hitCat(tg.body, dmg, fc, crit);
+    hitCat(tg.body, dmg, fc, crit, u);
+    if (D.slow && !tg.body.g.dead) tg.body.g.chillT = 120;
     if (D.bleed && !tg.body.g.dead) { tg.body.g.bleed = 150; tg.body.g.bleedDmg = Math.max(1.5, D.atk * 0.28 * (1 + 0.15 * s.up.atk)) * (g.frenzyT > 0 ? 2 : 1); fx('spark', tg.body.position.x, tg.body.position.y - 8, 4, fc, '#ff3b3b'); }
-    if (!tg.body.g.dead && (crit || D.taunt)) kickCat(tg.body, fc * (g.k === 7 ? 5 : 2.4), g.k === 7 ? -5 : -2.5, g.k === 7 ? 16 : 10);
+    if (!tg.body.g.dead && (crit || D.taunt)) kickCat(tg.body, fc * (D.a === 7 ? 5 : 2.4), D.a === 7 ? -5 : -2.5, D.a === 7 ? 16 : 10);
     slashFx(D.fx, tg.body.position.x, tg.body.position.y - 8, fc, crit);
     fx('spark', tg.body.position.x - fc * 8, tg.body.position.y - 6, 3); sfx(g.k === 0 ? 'hit' : 'slash');
   }
-  if (Math.random() < 0.14) pop(u.position.x + fc * 26, u.position.y - 34, pick(['냥펀치!', '퍽!', '챙!', '냥!']), '#fff4dc', 28);
+  if (Math.random() < 0.14) pop(u.position.x + fc * 26, u.position.y - 34, pick(D.race === 1 ? ['왈!', '컹!', '퍽!', '멍!'] : D.race === 2 ? ['슈욱!', '칙!', '퍽!', '캭!'] : ['냥펀치!', '퍽!', '챙!', '냥!']), '#fff4dc', 28);
   if (sk) skillMelee(u, tg, dmg);
 }
 
@@ -1053,6 +1215,21 @@ function updateCat(u, ts) {
     if (g.bt >= 30) { g.bt = 0; const bd = g.bleedDmg * (1 - 0.12 * S[g.team].up.def); g.hp -= bd; g.hurt = 4; fx('spark', u.position.x, u.position.y - 4, 2, 0, '#ff3b3b'); dmgNum(u, bd, false); if (g.hp <= 0) { killCat(u, 0); return; } }
   } g.hurt = Math.max(0, g.hurt - ts); g.atk = Math.max(0, g.atk - ts);
   if (g.shieldT > 0) g.shieldT -= ts;
+  if (g.guardT > 0) g.guardT -= ts; if (g.armorT > 0) g.armorT -= ts; if (g.chillT > 0) g.chillT -= ts; if (g.tauntT > 0) g.tauntT -= ts; if (g.boostT > 0) g.boostT -= ts;
+  if (g.noHit > 0) g.noHit -= ts;
+  if (D.race === 1) { if (g.noHit <= 0 && g.sh < g.shMax) g.sh = Math.min(g.shMax, g.sh + g.shMax * 0.1 * ts / 60 * (g.boostT > 0 ? 1.5 : 1)); }
+  else if (D.race === 2 && g.hp < g.max) g.hp = Math.min(g.max, g.hp + g.max * 0.008 * (D.regenMul || 1) * ts / 60);
+  if (D.healAura || D.guardAura) {
+    g.auT -= ts;
+    if (g.auT <= 0) {
+      g.auT = D.healAura ? 60 : 30;
+      for (const a of G.cats) if (a.g.team === g.team && !a.g.dead && Math.abs(a.position.x - u.position.x) < (D.healAura ? 150 : 170)) {
+        if (D.healAura) { if (a.g.sh < a.g.shMax) a.g.sh = Math.min(a.g.shMax, a.g.sh + a.g.shMax * 0.08); else if (a.g.hp < a.g.max) a.g.hp = Math.min(a.g.max, a.g.hp + a.g.max * 0.015); }
+        else a.g.boostT = 40;
+      }
+      if (D.healAura && Math.random() < 0.6) fx('spark', u.position.x + rnd(-40, 40), u.position.y - 10, 1, 0, '#9bffb0');
+    }
+  }
   if (g.frenzyT > 0) { g.frenzyT -= ts; if (Math.random() < 0.5) fx('spark', u.position.x + rnd(-14, 14), u.position.y + rnd(-D.h * 0.4, D.h * 0.3), 1, 0, '#ff5a4b'); }
   if (D.aura && Math.random() < D.aura.p) fx('spark', u.position.x + rnd(-D.w * 0.4, D.w * 0.4), u.position.y + rnd(-D.h * 0.5, D.h * 0.2), 1, 0, D.aura.c);
   if (u.position.x < -200 || u.position.x > W + 200 || u.position.y > H + 300) { killCat(u, dir); return; }
@@ -1064,7 +1241,8 @@ function updateCat(u, ts) {
   for (const e of G.cats) {
     const eg = e.g; if (eg.team === g.team || eg.dead) continue;
     const dx = (e.position.x - u.position.x) * dir; if (dx < -24) continue;
-    let d = dx; if (CATS[eg.k].taunt) d -= 60; if (D.assassin && CATS[eg.k].ranged) d -= 420;   // 도발 / 암살
+    if (eg.hid) continue;
+    let d = dx; if (CATS[eg.k].taunt || eg.tauntT > 0) d -= 60; if (D.assassin && CATS[eg.k].ranged) d -= 420;   // 도발 / 암살
     if (d < bd) { bd = d; best = e; }
   }
   const baseDx = (edgeEn - u.position.x) * dir;
@@ -1073,12 +1251,19 @@ function updateCat(u, ts) {
   if (!tgt && baseDx > -30) tgt = { base: true, dx: baseDx };
   let engaged = false;
   if (tgt) { const gap = tgt.base ? tgt.dx - D.w * 0.4 : tgt.dx - (D.w + tgt.body.g.w) * 0.4; engaged = gap <= D.rng + g.jit; }
+  const spd = D.spd * (g.chillT > 0 ? 0.5 : 1);
+  g.hid = D.tunnel ? !engaged : (D.stealth ? !!g.first : false);
+  if (engaged && D.leap && g.first && best) {   // 바실리스크: 앞줄을 뛰어넘는다
+    g.first = false;
+    const far = G.cats.filter((e) => e.g.team !== g.team && !e.g.dead && (e.position.x - u.position.x) * dir > 20 && (e.position.x - u.position.x) * dir < 340).sort((a, b) => (b.position.x - a.position.x) * dir)[0];
+    if (far && far !== best) { fx('dust', u.position.x, GROUND - 4, 6); Body.setPosition(u, { x: far.position.x - dir * 26, y: u.position.y }); Body.setVelocity(u, { x: 0, y: -8 }); fx('dust', far.position.x, GROUND - 4, 6); return; }
+  }
   let limP = 850 - D.w * 0.35;      // 항상 앞으로
   if (engaged) {
     Body.setVelocity(u, { x: 0, y: u.velocity.y }); g.moving = false;
     if (g.cd <= 0) { if (D.ranged) castOrb(u, tgt); else swing(u, tgt); }
-  } else if (myP < limP - 4) { Body.setVelocity(u, { x: dir * D.spd, y: u.velocity.y }); g.moving = true; g.anim += 0.3 * ts; }
-  else if (myP > limP + 8) { Body.setVelocity(u, { x: -dir * D.spd, y: u.velocity.y }); g.moving = true; g.anim += 0.3 * ts; }
+  } else if (myP < limP - 4) { Body.setVelocity(u, { x: dir * spd, y: u.velocity.y }); g.moving = true; g.anim += 0.3 * ts; }
+  else if (myP > limP + 8) { Body.setVelocity(u, { x: -dir * spd, y: u.velocity.y }); g.moving = true; g.anim += 0.3 * ts; }
   else { Body.setVelocity(u, { x: 0, y: u.velocity.y }); g.moving = false; }
 }
 
@@ -1087,21 +1272,22 @@ function aiThink(ts) {
   const A = G.ai; A.timer -= ts / 60; if (A.timer > 0) return;
   A.timer = rnd(0.7, 1.4);
   const st = G.st, me = S[1], lvl = me.baseLv, my = G.cats.filter((u) => u.g.team === 1), th = G.cats.filter((u) => u.g.team === 0);
-  if (G.special1 >= 1 && th.length) {   // 적 참치캔: 내 고양이가 몰려 있거나 본진이 위험할 때
+  if (G.special1 >= 1 && th.length) {   // 적 특수기: 종족별 사용 조건
     const lead = Math.max(...th.map((u) => u.position.x)), near = th.filter((u) => Math.abs(u.position.x - lead) < 220).length;
-    if (near >= 3 || (me.hp < maxHp(1, lvl) * 0.35 && near >= 2)) { dropCan(1); return; }
+    const mylead = my.length ? Math.min(...my.map((u) => u.position.x)) : W, contact = th.some((u) => Math.abs(u.position.x - mylead) < 340);
+    if (me.race === 0 ? (near >= 3 || (me.hp < maxHp(1, lvl) * 0.35 && near >= 2)) : me.race === 1 ? (my.length >= 3 && contact) : (contact && my.length <= RACES[2].max - 8)) { useSpecial(1); return; }
   }
   if (G.t > 20 && my.length >= 4 && Math.random() < st.eager) {
     const keys = ['eco', 'spd', 'atk', 'def'].filter((k) => me.up[k] < 3 && me.gold >= UP_COST[k][me.up[k]]);
     if (keys.length) { buy(1, pick(keys)); return; }
   }
-  const un = CATS.filter((D) => lvl >= D.unlock);
+  const un = CATS.filter((D) => D.race === me.race && lvl >= D.unlock);
   const theirRanged = th.filter((u) => CATS[u.g.k].ranged).length;
   const w = un.map((D) => {
     let x = D.aiW;
     if (D.assassin) x += theirRanged * 1.5;
-    if (D.k <= 2 && lvl >= D.unlock + 2) x *= 0.5;
-    if (st.boss && (D.k === 8 || D.k === 5)) x *= 2;
+    if (D.idx <= 2 && lvl >= D.unlock + 2) x *= 0.5;
+    if (st.boss && (D.idx === 8 || D.idx === 5)) x *= 2;
     return x;
   });
   let r = Math.random() * w.reduce((a, b) => a + b, 0), idx = 0;
@@ -1132,18 +1318,19 @@ function step() {
     aiThink(ts); G.skT = Math.max(0, G.skT - ts);
     if (G.hitQ.length) { const due = []; G.hitQ = G.hitQ.filter((q) => { q.t -= ts; if (q.t <= 0) { due.push(q); return false; } return true; }); for (const q of due) if (G.state === 'play') q.fn(); }
     for (const u of G.cats.slice()) if (!u.g.dead) updateCat(u, ts);
+    updateZones(ts);
     for (let i = shots.length - 1; i >= 0; i--) {
       const s = shots[i]; s.t += ts; if (s.t < 0) continue;
       if (s.tb && !s.tb.g.dead) { s.x1 = s.tb.position.x; s.y1 = s.tb.position.y - 6; }
       const p = clamp(s.t / s.dur, 0, 1), ar = s.kind === 'arrow';
       s.px = s.x; s.py = s.y;
       s.x = s.x0 + (s.x1 - s.x0) * p; s.y = s.y0 + (s.y1 - s.y0) * p - Math.sin(p * Math.PI) * (ar ? 26 : 60);
-      if (!ar) { (s.trail ||= []).push({ x: s.x, y: s.y }); if (s.trail.length > 8) s.trail.shift(); if (Math.random() < 0.5) fx('spark', s.x, s.y, 1, 0, '#d6b8ff'); }
+      if (!ar) { (s.trail ||= []).push({ x: s.x, y: s.y }); if (s.trail.length > 8) s.trail.shift(); if (Math.random() < 0.5) fx('spark', s.x, s.y, 1, 0, s.col || '#d6b8ff'); }
       if (p >= 1) {
         if (ar) {
           if (s.base) dmgBase(1 - s.team, s.dmg); else if (s.tb && !s.tb.g.dead) hitCat(s.tb, s.dmg, s.team ? -1 : 1);
           fx('spark', s.x1, s.y1, 4, 0, '#fff4c2'); addV('ring', s.x1, s.y1, { life: 10, size: 22, color: '#fff' }); sfx('hit');
-        } else explode(s.x1, s.y1, s.team, s.dmg, 80, 1, true);
+        } else { explode(s.x1, s.y1, s.team, s.dmg, s.rad || 80, 1, true); if (s.fxk) shotStatus(s); }
         shots.splice(i, 1);
       }
     }
@@ -1210,11 +1397,15 @@ function drawTower(lv, P, flagCol) {
   const top = -BASE_H[lv - 1] - (lv >= 4 ? 6 : 0);
   line(-50, top, -50, top - 34, 3); c.beginPath(); c.moveTo(-50, top - 34); c.lineTo(-18, top - 26); c.lineTo(-50, top - 16); c.closePath(); fs(flagCol, 2.4);
 }
+const PAL_D = { box: '#b0623a', cream: '#f0d8b0', door: '#2c2133', glow: '#ffd98a', box2: '#c9794a', post: '#d8b890', stripe: '#6a3a1c', ham: '#7fb4ff', top: '#a05030', glow4: '#ffe08a', crown: '#ff6a4d' };
+const PAL_L = { box: '#6a8a5a', cream: '#c8d8a0', door: '#1e2a1a', glow: '#b6ff4d', box2: '#7a9a62', post: '#a8bf80', stripe: '#3e5a2e', ham: '#ff9b4d', top: '#5a7a4a', glow4: '#c8ff7a', crown: '#ffb347' };
+const darkPal = (p) => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, k === 'door' ? v : mix(v, '#2a1030', 0.38)]));
+const PALS = [PAL0, PAL_D, PAL_L], PALS_E = PALS.map(darkPal);
 function drawBase(team) {
   const s = S[team], lv = s.baseLv, cx = team ? W - BASE_CX : BASE_CX;
   c.save(); c.translate(cx + (s.hurt > 0 ? rnd(-2, 2) : 0), GROUND + 2);
   if (team) c.scale(-1, 1);
-  drawTower(lv, team ? PAL1 : PAL0, TEAM[team].main);
+  drawTower(lv, (team ? PALS_E : PALS)[s.race], TEAM[team].main);
   c.restore();
   if (s.hurt > 0) { c.globalAlpha = s.hurt / 8 * 0.4; rr(cx - 72, GROUND - BASE_H[lv - 1] - 6, 144, BASE_H[lv - 1] + 8, 8); c.fillStyle = '#fff'; c.fill(); c.globalAlpha = 1; }
   // 체력 바
@@ -1241,19 +1432,22 @@ function drawCat(b) {
   }
   if (D.glow) { c.globalAlpha = 0.18 + 0.06 * Math.sin(g.anim * 2); circ(b.position.x, b.position.y + g.lane, D.w * 0.7); c.fillStyle = D.glow; c.fill(); c.globalAlpha = 1; }
   if (g.frenzyT > 0) { c.globalAlpha = 0.28 + 0.1 * Math.sin(g.anim * 4); circ(b.position.x, b.position.y + g.lane, D.w * 0.75); c.fillStyle = '#ff3b3b'; c.fill(); c.globalAlpha = 1; }
-  c.save(); c.translate(b.position.x, b.position.y + D.h / 2 - FOOT * sc + g.lane - jump * sc); c.rotate(g.spin); c.scale(g.face * sc * (1 + sq * 0.18) * sx, sc * (1 - sq * 0.22) * sy);
+  const hidA = g.hid ? 0.38 : 1;
+  c.save(); c.globalAlpha = hidA; c.translate(b.position.x, b.position.y + D.h / 2 - FOOT * sc + g.lane - jump * sc); c.rotate(g.spin); c.scale(g.face * sc * (1 + sq * 0.18) * sx, sc * (1 - sq * 0.22) * sy);
   drawSprites(g.k, st, bob, lunge);
   c.restore();
+  if (g.sh > 0 || g.guardT > 0) { c.globalAlpha = 0.55 * clamp(g.guardT > 0 ? 1 : g.sh / g.shMax + 0.15, 0, 1); c.beginPath(); c.arc(b.position.x, b.position.y + g.lane + 4, D.w * 0.58, Math.PI * 1.05, Math.PI * 1.95); c.lineWidth = 3; c.strokeStyle = g.guardT > 0 ? '#ffe27a' : '#9ec9ff'; c.stroke(); c.globalAlpha = 1; }
   if (g.shieldT > 0) { c.globalAlpha = clamp(g.shieldT / 40, 0, 1) * 0.8; c.beginPath(); c.arc(b.position.x, b.position.y + g.lane + 4, D.w * 0.62, Math.PI, TAU); c.lineWidth = 4; c.strokeStyle = '#ffd84a'; c.stroke(); c.globalAlpha *= 0.25; c.fillStyle = '#ffe27a'; c.fill(); c.globalAlpha = 1; }
-  if (g.hp < g.max) {
+  if (g.hp < g.max || (g.sh > 0 && g.sh < g.shMax)) {
     const y = b.position.y + g.lane + D.h / 2 - (FOOT + (D.top || 24)) * sc - 10, bw = 20 + 14 * sc;
     c.fillStyle = 'rgba(36,28,46,.75)'; c.fillRect(b.position.x - bw / 2, y, bw, 5);
     c.fillStyle = TEAM[g.team].light; c.fillRect(b.position.x - bw / 2, y, bw * clamp(g.hp / g.max, 0, 1), 5);
+    if (g.sh > 0) { c.fillStyle = '#9ec9ff'; c.fillRect(b.position.x - bw / 2, y - 3, bw * clamp(g.sh / g.shMax, 0, 1), 2.5); }
   }
 }
 function drawPiece(b) {
   const g = b.g; c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle); c.scale(g.flip * g.sc * ARTSC, g.sc * ARTSC); c.globalAlpha = clamp(g.life / 50, 0, 1);
-  c.translate(-g.def.ox, -g.def.oy); g.def.draw(Object.assign({}, IDLE, { team: g.team, coat: g.coat || 0, mood: 2 }));
+  c.translate(-g.def.ox, -g.def.oy); g.def.draw(Object.assign({}, IDLE, { race: g.race || 0, team: g.team, coat: g.coat || 0, mood: 2 }));
   c.restore();
 }
 function drawChip(b) { const g = b.g; c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle); c.globalAlpha = clamp(g.life / 50, 0, 1); rr(-g.w / 2, -g.h / 2, g.w, g.h, 3); fs(g.color, 2); c.restore(); }
@@ -1275,14 +1469,14 @@ function render() {
   for (const t of [0, 1]) if (!G.deadBase[t]) drawBase(t);
   const bodies = Composite.allBodies(engine.world), by = { chip: [], piece: [], cat: [], can: [] };
   for (const b of bodies) if (b.g && by[b.g.kind]) by[b.g.kind].push(b);
-  by.chip.forEach(drawChip); by.piece.forEach(drawPiece);
+  drawZones(); by.chip.forEach(drawChip); by.piece.forEach(drawPiece);
   by.cat.sort((a, b) => a.g.lane - b.g.lane).forEach(drawCat);
-  for (const s of shots) if (s.trail && s.kind !== 'arrow') s.trail.forEach((q, i, a) => { c.globalAlpha = (i + 1) / a.length * 0.5; circ(q.x, q.y, 3 + i * 1.4); c.fillStyle = '#c9a5ff'; c.fill(); });
+  for (const s of shots) if (s.trail && s.kind !== 'arrow') s.trail.forEach((q, i, a) => { c.globalAlpha = (i + 1) / a.length * 0.5; circ(q.x, q.y, 3 + i * 1.4); c.fillStyle = s.col || '#c9a5ff'; c.fill(); });
   c.globalAlpha = 1;
   for (const s of shots) {
     if (s.t < 0) continue; if (s.kind === 'arrow') { drawArrow(s); continue; }
-    c.globalAlpha = 0.25; circ(s.x, s.y, 20); c.fillStyle = '#c9a5ff'; c.fill(); c.globalAlpha = 0.45; circ(s.x, s.y, 14); c.fill(); c.globalAlpha = 1;
-    circ(s.x, s.y, 8); fs('#b58bff', 2); circ(s.x, s.y, 4.4); c.fillStyle = '#efe0ff'; c.fill();
+    c.globalAlpha = 0.25; circ(s.x, s.y, 20); c.fillStyle = s.col || '#c9a5ff'; c.fill(); c.globalAlpha = 0.45; circ(s.x, s.y, 14); c.fill(); c.globalAlpha = 1;
+    circ(s.x, s.y, 8); fs(s.col || '#b58bff', 2); circ(s.x, s.y, 4.4); c.fillStyle = '#efe0ff'; c.fill();
     const ra = (G ? G.fr : 0) * 0.25; for (let i = 0; i < 3; i++) { const a = ra + i * 2.094; circ(s.x + Math.cos(a) * 12, s.y + Math.sin(a) * 5, 1.6); c.fillStyle = '#fff'; c.fill(); }
   }
   by.can.forEach(drawCan);
@@ -1309,14 +1503,14 @@ function paintIcons() {
   for (const D of CATS) {
     const ic = cards[D.k].canvas.getContext('2d'); c = ic; c.clearRect(0, 0, 88, 72);
     const IS = Math.min(1.1, 62 / (FOOT + (D.top || 24))); c.save(); c.translate(44 - 6 * IS, 4 + (D.top || 24) * IS); c.scale(IS, IS);
-    drawSprites(D.k, Object.assign({}, IDLE, { mood: D.k >= 2 ? 3 : 0 }), 0, 0);
+    drawSprites(D.k, Object.assign({}, IDLE, { race: D.race, mood: D.a >= 2 ? 3 : 0 }), 0, 0);
     c.restore();
   }
   c = mainCtx;
 }
 CATS.forEach((D, i) => {
   const el = document.createElement('button'); el.type = 'button'; el.className = 'unit';
-  el.innerHTML = `<span class="key">${i + 1}</span><canvas width="88" height="72"></canvas><span class="nm">${D.name}</span><span class="rl">${D.role}</span><span class="ct"><i></i>${D.cost}</span><span class="lock">본진 Lv${D.unlock}</span><span class="cdf"></span>`;
+  el.innerHTML = `<span class="key">${D.idx + 1}</span><canvas width="88" height="72"></canvas><span class="nm">${D.name}</span><span class="rl">${D.role}</span><span class="ct"><i></i>${D.cost}</span><span class="lock">본진 Lv${D.unlock}</span><span class="cdf"></span>`;
   el.title = `${D.skill} (${Math.round(D.sp * 100)}%)`; el.addEventListener('click', () => { audio(); trySpawn(D.k); });
   deck.appendChild(el); cards.push({ el, canvas: el.querySelector('canvas'), cdf: el.querySelector('.cdf') });
 });
@@ -1331,7 +1525,7 @@ for (const [key, name, hot] of UPS) {
 function trySpawn(k) {
   if (!G || G.state !== 'play') return;
   if ((G.cd[k] || 0) > 0) return;
-  if (spawnCat(0, k)) G.cd[k] = 30; else sfx('no');
+  if (spawnCat(0, k)) G.cd[k] = 30 * RACES[S[0].race].cdMul; else sfx('no');
 }
 function tryBuy(key) { if (!G || G.state !== 'play') return; if (!buy(0, key)) sfx('no'); }
 
@@ -1343,6 +1537,7 @@ function hud() {
   setTxt($('coinN'), String(gold), 'gold'); setTxt($('lvN'), String(s.baseLv), 'lv'); setTxt($('stgN'), DIFFS[diff].name, 'stg'); setTxt($('inc'), `+${incomeOf(0).toFixed(1)}/초`, 'inc');
   const sp = $('bSpecial'); $('cdBar').style.transform = `scaleX(${1 - G.special})`; sp.classList.toggle('ready', G.special >= 1 && play);
   for (const D of CATS) {
+    if (D.race !== s.race) continue;
     const k = cards[D.k], locked = s.baseLv < D.unlock;
     k.el.classList.toggle('locked', locked); k.el.classList.toggle('poor', !play || (!locked && gold < D.cost));
     k.cdf.style.transform = `scaleY(${clamp((G.cd[D.k] || 0) / 30, 0, 1)})`;
@@ -1352,7 +1547,7 @@ function hud() {
     u.pips.forEach((p, i) => p.classList.toggle('on', i < lv));
     u.el.classList.toggle('max', cost == null); u.el.classList.toggle('poor', !play || cost == null || gold < cost);
     setTxt(u.cost, cost == null ? '' : String(cost), 'c' + key);
-    setTxt(u.desc, key === 'base' ? (cost == null ? '최대 레벨' : `Lv${s.baseLv + 1}: ${UNLOCK_NAME[s.baseLv]} 해금 · 수입↑`) : (cost == null ? '최대' : UP_DESC[key]), 'd' + key);
+    setTxt(u.desc, key === 'base' ? (cost == null ? '최대 레벨' : `Lv${s.baseLv + 1}: ${RACES[s.race].unlockNames[s.baseLv]} 해금 · 수입↑`) : (cost == null ? '최대' : UP_DESC[key]), 'd' + key);
   }
 }
 
@@ -1365,17 +1560,28 @@ function showEnd() {
   $('bAgain').textContent = win ? '한 번 더' : '다시 도전'; $('bRetry').textContent = '난이도 바꾸기'; $('bRetry').hidden = false;
   $('ovEnd').hidden = false;
 }
-function startGame() { audio(); newGame(); setDiffUI(); G.state = 'play'; $('ovTitle').hidden = true; $('ovEnd').hidden = true; }
+function applyRaceUI() {
+  const r = S[0].race; cards.forEach((cd, i) => { cd.el.hidden = CATS[i].race !== r; });
+  $('bSpecial').querySelector('span').textContent = `${RACES[r].special} (스페이스)`;
+}
+function startGame() { audio(); newGame(); setDiffUI(); applyRaceUI(); G.state = 'play'; $('ovTitle').hidden = true; $('ovEnd').hidden = true; }
 
 $('bStart').addEventListener('click', startGame);
+function setRaceUI() {
+  document.querySelectorAll('.rc').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.r === myRace)));
+  document.querySelectorAll('.fo').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.r === foeRace)));
+  $('raceD').textContent = `${RACES[myRace].name}: ${RACES[myRace].desc} · 특수기 ${RACES[myRace].special}`;
+}
+document.querySelectorAll('.rc').forEach((b) => b.addEventListener('click', () => { myRace = +b.dataset.r; try { localStorage.setItem('alleycats.race', String(myRace)); } catch (e) { /* 저장 없이도 진행 가능 */ } setRaceUI(); }));
+document.querySelectorAll('.fo').forEach((b) => b.addEventListener('click', () => { foeRace = +b.dataset.r; try { localStorage.setItem('alleycats.foe', String(foeRace)); } catch (e) { /* 저장 없이도 진행 가능 */ } setRaceUI(); }));
 function setDiffUI() {
   $('stgD').textContent = `${DIFFS[diff].name}: ${DIFFS[diff].desc}`;
   document.querySelectorAll('.dif').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.d === diff)));
 }
 document.querySelectorAll('.dif').forEach((b) => b.addEventListener('click', () => { diff = +b.dataset.d; try { localStorage.setItem('alleycats.diff', String(diff)); } catch (e) { /* 저장 없이도 진행 가능 */ } setDiffUI(); }));
 $('bAgain').addEventListener('click', () => startGame());
-$('bRetry').addEventListener('click', () => { $('ovEnd').hidden = true; $('ovTitle').hidden = false; setDiffUI(); });
-$('bSpecial').addEventListener('click', () => { audio(); dropCan(); });
+$('bRetry').addEventListener('click', () => { $('ovEnd').hidden = true; $('ovTitle').hidden = false; setDiffUI(); setRaceUI(); });
+$('bSpecial').addEventListener('click', () => { audio(); useSpecial(0); });
 function setSlow(v) { slowManual = v; $('bSlow').classList.toggle('on', v); }
 $('bSlow').addEventListener('click', () => setSlow(!slowManual));
 function setMute(v) { muted = v; if (master) master.gain.value = v ? 0 : 0.5; $('bMute').textContent = v ? '소리 꺼짐' : '소리 켜짐'; $('bMute').classList.toggle('on', v); }
@@ -1384,8 +1590,8 @@ const HOT = { b: 'base', g: 'eco', h: 'spd', j: 'atk', k: 'def' };
 addEventListener('keydown', (e) => {
   if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
   const k = e.key.toLowerCase();
-  if (k >= '1' && k <= '9') { audio(); trySpawn(+k - 1); }
-  else if (k === ' ' && G.state === 'play') { e.preventDefault(); audio(); dropCan(); }
+  if (k >= '1' && k <= '9') { audio(); trySpawn(S[0].race * 9 + +k - 1); }
+  else if (k === ' ' && G.state === 'play') { e.preventDefault(); audio(); useSpecial(0); }
   else if (HOT[k]) { audio(); tryBuy(HOT[k]); }
   else if (k === 's') setSlow(!slowManual);
   else if (k === 'm') { audio(); setMute(!muted); }
@@ -1427,7 +1633,7 @@ function frame(now) {
   render(); hud();
   if (mr) { const s = Math.floor((now - recStart) / 1000); $('recT').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; if (s >= 90) stopRec(); }
 }
-buildBG(); newGame(); setDiffUI();
+buildBG(); newGame(); setDiffUI(); setRaceUI(); applyRaceUI();
 requestAnimationFrame(frame);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { buildBG(Math.max(0, bgTone)); paintIcons(); });
 paintIcons();
