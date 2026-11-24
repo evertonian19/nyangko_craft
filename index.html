@@ -27,7 +27,7 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   -webkit-tap-highlight-color: transparent;
 }
-.app { max-width: 1120px; margin: 0 auto; display: grid; gap: 10px; }
+.app { max-width: 1440px; margin: 0 auto; display: grid; gap: 10px; }
 button { font-family: var(--font); color: var(--ink); cursor: pointer; }
 button:focus-visible { outline: 3px solid var(--lamp); outline-offset: 2px; }
 
@@ -50,7 +50,7 @@ button:focus-visible { outline: 3px solid var(--lamp); outline-offset: 2px; }
 #bRec { display: none; } #bRec.show { display: block; }
 #bRec::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--red); margin-right: 7px; }
 
-.stage { position: relative; aspect-ratio: 16 / 9; width: min(100%, max(480px, calc((100vh - 96px) * 16 / 9))); width: min(100%, max(480px, calc((100dvh - 96px) * 16 / 9))); justify-self: center; border: 4px solid var(--ink); border-radius: 18px; overflow: hidden; background: #1a1d36; container-type: inline-size; touch-action: manipulation; }
+.stage { position: relative; aspect-ratio: 1500 / 720; width: min(100%, max(480px, calc((100vh - 400px) * 1500 / 720))); width: min(100%, max(480px, calc((100dvh - 400px) * 1500 / 720))); justify-self: center; border: 4px solid var(--ink); border-radius: 18px; overflow: hidden; background: #1a1d36; container-type: inline-size; touch-action: manipulation; }
 canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .ov { position: absolute; inset: 0; display: flex; overflow: auto; padding: 1.5cqw; background: rgba(20, 23, 43, .6); }
 .ov[hidden] { display: none; }
@@ -147,7 +147,7 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
   </header>
 
   <section class="stage" id="stage">
-    <canvas id="cv" width="1280" height="720" aria-label="골목길에서 고양이 군대가 싸우는 장면"></canvas>
+    <canvas id="cv" width="1500" height="720" aria-label="골목길에서 고양이 군대가 싸우는 장면"></canvas>
     <div id="rec" hidden>REC <span id="recT">0:00</span></div>
     <div id="toast" role="status"></div>
     <div class="ov" id="ovTitle">
@@ -195,7 +195,7 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
 (() => {
 'use strict';
 const { Engine, Bodies, Body, Composite, Events } = Matter;
-const W = 1280, H = 720, GROUND = 610, INK = '#241c2e';
+const W = 1500, H = 720, GROUND = 610, INK = '#241c2e';
 const CATC = { ground: 1, unit: 2, debris: 8, can: 32 };
 const TEAM = [
   { main: '#4a86ff', dark: '#2450b4', light: '#a9c8ff' },
@@ -875,7 +875,7 @@ function buildBG(tone = 1) {
   const TN = TONES[tone], sky = b.createLinearGradient(0, -40, 0, 200); sky.addColorStop(0, TN[0]); sky.addColorStop(1, TN[1]);
   b.fillStyle = sky; b.fillRect(-40, -40, W + 80, 260);
   b.fillStyle = '#fff6d0'; for (let i = 0; i < 60; i++) { b.globalAlpha = rnd(0.3, 0.9); b.beginPath(); b.arc(rnd(0, W), rnd(0, 120), rnd(0.8, 1.8), 0, TAU); b.fill(); } b.globalAlpha = 1;
-  b.fillStyle = TN[2]; b.beginPath(); b.arc(900, 70, 38, 0, TAU); b.fill(); b.fillStyle = TN[1]; b.beginPath(); b.arc(916, 62, 33, 0, TAU); b.fill();
+  b.fillStyle = TN[2]; b.beginPath(); b.arc(W - 380, 70, 38, 0, TAU); b.fill(); b.fillStyle = TN[1]; b.beginPath(); b.arc(W - 364, 62, 33, 0, TAU); b.fill();
   // 양쪽 건물 벽 (벽돌) — 가운데가 좁은 골목 하늘
   const brickWall = (x0, x1, y0, tone, seed) => {
     b.fillStyle = tone; b.fillRect(x0, y0, x1 - x0, GROUND - y0);
@@ -887,8 +887,8 @@ function buildBG(tone = 1) {
   brickWall(-40, W + 40, 150, '#5b3a4a', 3);
   b.fillStyle = 'rgba(14,18,48,.55)'; b.fillRect(-40, 150, W + 80, 30);       // 지붕 그림자
   // 창문 (불 켜진 곳 몇 개)
-  for (let i = 0; i < 9; i++) {
-    const x = 70 + i * 140, y = 210 + (i % 2) * 70, lit = [1, 4, 6, 8].includes(i);
+  for (let i = 0; i < 10; i++) {
+    const x = 70 + i * 144, y = 210 + (i % 2) * 70, lit = [1, 4, 6, 8].includes(i);
     box(x, y, 64, 80, '#2a2038', 4, 3.5); box(x + 6, y + 6, 52, 68, lit ? '#ffd98a' : '#1d2142', 3, 0);
     if (lit) { b.fillStyle = 'rgba(255,217,138,.18)'; b.fillRect(x - 14, y + 80, 92, 190); b.fillStyle = '#7a4a3a'; b.fillRect(x + 6, y + 6, 52, 14); }
     b.strokeStyle = INK; b.lineWidth = 3; b.beginPath(); b.moveTo(x + 32, y + 6); b.lineTo(x + 32, y + 74); b.moveTo(x + 6, y + 40); b.lineTo(x + 58, y + 40); b.stroke();
@@ -898,26 +898,26 @@ function buildBG(tone = 1) {
   b.strokeStyle = INK; b.lineWidth = 2.5; b.beginPath(); b.moveTo(120, 170); b.quadraticCurveTo(360, 230, 600, 175); b.stroke();
   const cl = ['#ff8aa0', '#7fd1ff', '#ffe27a', '#b9f0c7']; for (let i = 0; i < 4; i++) { const t = 0.15 + i * 0.22, x = 120 + t * 480, y = 170 + Math.sin(t * Math.PI) * 38 + 6; box(x, y, 26, 34, cl[i], 4, 2.5); }
   // 에어컨 실외기 · 배관 · 비상계단
-  box(1010, 180, 90, 54, '#8d93a8', 5, 3.5); b.fillStyle = '#4b5068'; b.beginPath(); b.arc(1055, 207, 20, 0, TAU); b.fill(); b.lineWidth = 3; b.strokeStyle = INK; b.stroke();
+  box(W - 270, 180, 90, 54, '#8d93a8', 5, 3.5); b.fillStyle = '#4b5068'; b.beginPath(); b.arc(W - 225, 207, 20, 0, TAU); b.fill(); b.lineWidth = 3; b.strokeStyle = INK; b.stroke();
   b.strokeStyle = INK; b.lineWidth = 12; b.beginPath(); b.moveTo(30, 150); b.lineTo(30, GROUND); b.stroke(); b.strokeStyle = '#9aa1b5'; b.lineWidth = 7; b.stroke();
-  b.strokeStyle = INK; b.lineWidth = 12; b.beginPath(); b.moveTo(1250, 150); b.lineTo(1250, GROUND); b.stroke(); b.strokeStyle = '#9aa1b5'; b.lineWidth = 7; b.stroke();
+  b.strokeStyle = INK; b.lineWidth = 12; b.beginPath(); b.moveTo(W - 30, 150); b.lineTo(W - 30, GROUND); b.stroke(); b.strokeStyle = '#9aa1b5'; b.lineWidth = 7; b.stroke();
   // 낙서(발바닥)
   b.fillStyle = 'rgba(255,207,90,.7)'; const paw = (x, y, s) => { b.beginPath(); b.ellipse(x, y, 11 * s, 9 * s, 0, 0, TAU); b.fill(); for (const [dx, dy] of [[-12, -12], [-4, -17], [5, -17], [13, -12]]) { b.beginPath(); b.ellipse(x + dx * s, y + dy * s, 4.5 * s, 5.5 * s, 0, 0, TAU); b.fill(); } };
-  paw(640, 330, 1.4); paw(700, 300, 1);
+  paw(W / 2, 330, 1.4); paw(W / 2 + 60, 300, 1);
   // 가로등 (가운데) + 빛 번짐
-  const lg = b.createRadialGradient(640, 250, 10, 640, 330, 330); lg.addColorStop(0, 'rgba(255,214,120,.5)'); lg.addColorStop(1, 'rgba(255,214,120,0)');
-  b.fillStyle = lg; b.fillRect(240, 0, 800, GROUND);
-  b.strokeStyle = INK; b.lineWidth = 14; b.beginPath(); b.moveTo(640, GROUND); b.lineTo(640, 250); b.quadraticCurveTo(640, 222, 600, 222); b.stroke();
-  b.strokeStyle = '#5d6482'; b.lineWidth = 8; b.stroke(); box(574, 222, 50, 22, '#ffe08a', 8, 3.5);
+  const lg = b.createRadialGradient(W / 2, 250, 10, W / 2, 330, 330); lg.addColorStop(0, 'rgba(255,214,120,.5)'); lg.addColorStop(1, 'rgba(255,214,120,0)');
+  b.fillStyle = lg; b.fillRect(W / 2 - 400, 0, 800, GROUND);
+  b.strokeStyle = INK; b.lineWidth = 14; b.beginPath(); b.moveTo(W / 2, GROUND); b.lineTo(W / 2, 250); b.quadraticCurveTo(W / 2, 222, W / 2 - 40, 222); b.stroke();
+  b.strokeStyle = '#5d6482'; b.lineWidth = 8; b.stroke(); box(W / 2 - 66, 222, 50, 22, '#ffe08a', 8, 3.5);
   // 골목 바닥: 아스팔트
   const ag = b.createLinearGradient(0, GROUND, 0, H + 40); ag.addColorStop(0, '#3a3d58'); ag.addColorStop(1, '#23253b');
   b.fillStyle = ag; b.fillRect(-40, GROUND, W + 80, H + 80 - GROUND);
   b.strokeStyle = 'rgba(0,0,0,.35)'; b.lineWidth = 2; for (let i = 0; i < 14; i++) { let x = rnd(0, W), y = rnd(GROUND + 6, 700); b.beginPath(); b.moveTo(x, y); for (let j = 0; j < 4; j++) { x += rnd(10, 36); y += rnd(-6, 6); b.lineTo(x, y); } b.stroke(); }
   b.fillStyle = '#e8c547'; for (let x = 20; x < W; x += 120) b.fillRect(x, 648, 64, 8);
   // 물웅덩이(가로등 반사)
-  for (const [x, y, rx] of [[420, 660, 70], [880, 672, 90], [1130, 650, 50]]) { b.fillStyle = 'rgba(20,24,52,.6)'; b.beginPath(); b.ellipse(x, y, rx, 9, 0, 0, TAU); b.fill(); b.fillStyle = 'rgba(255,214,120,.22)'; b.beginPath(); b.ellipse(x + 10, y, rx * 0.55, 4, 0, 0, TAU); b.fill(); }
+  for (const [x, y, rx] of [[420, 660, 70], [880, 672, 90], [1130, 650, 50], [1380, 668, 60]]) { b.fillStyle = 'rgba(20,24,52,.6)'; b.beginPath(); b.ellipse(x, y, rx, 9, 0, 0, TAU); b.fill(); b.fillStyle = 'rgba(255,214,120,.22)'; b.beginPath(); b.ellipse(x + 10, y, rx * 0.55, 4, 0, 0, TAU); b.fill(); }
   // 맨홀, 생선 가시, 연석
-  b.fillStyle = '#2c2f48'; b.beginPath(); b.ellipse(640, 668, 44, 9, 0, 0, TAU); b.fill(); b.lineWidth = 2.5; b.strokeStyle = INK; b.stroke();
+  b.fillStyle = '#2c2f48'; b.beginPath(); b.ellipse(W / 2, 668, 44, 9, 0, 0, TAU); b.fill(); b.lineWidth = 2.5; b.strokeStyle = INK; b.stroke();
   b.strokeStyle = '#e9eefb'; b.lineWidth = 2.4; b.lineCap = 'round'; b.beginPath(); b.moveTo(560, 640); b.lineTo(598, 640); for (let i = 0; i < 5; i++) { b.moveTo(568 + i * 7, 640); b.lineTo(566 + i * 7, 631); b.moveTo(568 + i * 7, 640); b.lineTo(566 + i * 7, 649); } b.stroke();
   b.fillStyle = '#4f5478'; b.fillRect(-40, 700, W + 80, 60); b.lineWidth = 3.5; b.strokeStyle = INK; b.strokeRect(-40, 700, W + 80, 60);
   b.restore();
@@ -1515,7 +1515,7 @@ function updateCat(u, ts) {
     const far = G.cats.filter((e) => e.g.team !== g.team && !e.g.dead && (e.position.x - u.position.x) * dir > 20 && (e.position.x - u.position.x) * dir < 340).sort((a, b) => (b.position.x - a.position.x) * dir)[0];
     if (far && far !== best) { fx('dust', u.position.x, GROUND - 4, 6); Body.setPosition(u, { x: far.position.x - dir * 26, y: u.position.y }); Body.setVelocity(u, { x: 0, y: -8 }); fx('dust', far.position.x, GROUND - 4, 6); return; }
   }
-  let limP = 850 - D.w * 0.35;      // 항상 앞으로
+  let limP = W - 2 * EDGE - D.w * 0.35;      // 항상 앞으로
   if (engaged) {
     Body.setVelocity(u, { x: 0, y: u.velocity.y }); g.moving = false;
     if (g.cd <= 0) { if (D.ranged) castOrb(u, tgt); else swing(u, tgt); }
