@@ -102,7 +102,8 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
 .keys { margin: 0; font-size: 13px; color: var(--dim); text-align: center; }
 @media (max-width: 900px) { .deck { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 .stg { display: flex; align-items: center; gap: 1.6cqw; font-size: clamp(14px, 2.8cqw, 24px); }
-.stg .btn { padding: 2px 12px; }
+.stg .btn { padding: 4px 16px; }
+.stg .btn.dif[aria-pressed="true"] { background: #ffcf5a; box-shadow: 0 0 0 3px #241c2e inset; }
 #stgD { margin: 0; font-size: clamp(11px, 2cqw, 17px); color: #6b5470; }
 @media (max-width: 560px) { .btn { font-size: 15px; padding: 5px 10px; } .key { display: none; } .unit canvas { max-width: 64px; } }
 @media (prefers-reduced-motion: reduce) { .btn.ready, #rec::before { animation: none; } }
@@ -110,7 +111,7 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
 
 <main class="app">
   <header class="hud">
-    <div class="stat" aria-label="골드와 본진 레벨"><span class="coin-ic"></span><b id="coinN">0</b><span id="inc"></span><span class="lv">스테이지 <b id="stgN">1</b> · 본진 Lv <b id="lvN">1</b></span></div>
+    <div class="stat" aria-label="골드와 본진 레벨"><span class="coin-ic"></span><b id="coinN">0</b><span id="inc"></span><span class="lv">난이도 <b id="stgN">보통</b> · 본진 Lv <b id="lvN">1</b></span></div>
     <div class="tools">
       <button class="btn big" id="bSpecial" type="button"><span>참치캔 낙하 (스페이스)</span><i class="cd" id="cdBar"></i></button>
       <button class="btn" id="bSlow" type="button">슬로모션</button>
@@ -131,7 +132,7 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
           <li>골드는 병력뿐 아니라 <b>수입 · 공속 · 공격 · 방어</b> 강화에도 써요. 지금 뽑을지, 키울지가 승부처!</li>
           <li>고양이들은 알아서 <b>앞으로 돌격</b>해요. 상대 본진 체력을 0으로 만들면 승리!</li>
         </ul>
-        <div class="stg"><button class="btn" id="bPrev" type="button" aria-label="이전 스테이지">◀</button><b id="stgT">스테이지 1</b><button class="btn" id="bNext" type="button" aria-label="다음 스테이지">▶</button></div>
+        <div class="stg" role="group" aria-label="난이도"><button class="btn dif" type="button" data-d="0" aria-pressed="false">쉬움</button><button class="btn dif" type="button" data-d="1" aria-pressed="true">보통</button><button class="btn dif" type="button" data-d="2" aria-pressed="false">어려움</button></div>
         <p id="stgD"></p>
         <button class="btn go" id="bStart" type="button">시작하기</button>
       </div>
@@ -177,7 +178,7 @@ const CATS = [
   { k: 0, name: '길냥이', role: '기본', cost: 25, hp: 45, atk: 6, cd: 36, rng: 26, spd: 1.6, w: 44, h: 36, sc: 0.85, top: 24, unlock: 1, fx: 'claw', aiW: 3 },
   { k: 1, name: '도적냥이', role: '암살', cost: 40, hp: 34, atk: 9, cd: 24, rng: 24, spd: 2.7, w: 46, h: 36, sc: 0.9, top: 24, unlock: 1, assassin: 1, firstMul: 2.2, ghost: 1, fx: 'x', aiW: 2 },
   { k: 2, name: '궁수냥이', role: '원거리', cost: 45, hp: 30, atk: 7, cd: 34, rng: 230, spd: 1.4, w: 46, h: 38, sc: 0.9, top: 30, unlock: 1, ranged: 'arrow', aiW: 2.2 },
-  { k: 3, name: '전사냥이', role: '탱커', cost: 75, hp: 160, atk: 11, cd: 44, rng: 32, spd: 1.2, w: 56, h: 44, sc: 1.05, top: 30, unlock: 2, taunt: 1, dr: 0.72, fx: 'wave', aiW: 3 },
+  { k: 3, name: '전사냥이', role: '탱커', cost: 90, hp: 115, atk: 11, cd: 44, rng: 32, spd: 1.2, w: 56, h: 44, sc: 1.05, top: 30, unlock: 2, taunt: 1, dr: 0.85, fx: 'wave', aiW: 3 },
   { k: 4, name: '마법사냥이', role: '광역 마법', cost: 110, hp: 52, atk: 20, cd: 100, rng: 300, spd: 1.3, w: 52, h: 44, sc: 1.0, top: 48, unlock: 2, ranged: 'orb', glow: '#b58bff', aura: { c: '#d6b8ff', p: 0.09 }, aiW: 2.5 },
   { k: 5, name: '용사냥이', role: '대검', cost: 200, hp: 400, atk: 28, cd: 58, rng: 54, spd: 1.1, w: 80, h: 64, sc: 1.45, top: 40, unlock: 3, dr: 0.88, area: 1, big: 1, glow: '#ffd84a', aura: { c: '#ffd84a', p: 0.1 }, aiW: 2 },
   { k: 6, name: '삵', role: '출혈', cost: 140, hp: 130, atk: 12, cd: 22, rng: 28, spd: 3.0, w: 62, h: 46, sc: 1.15, top: 30, unlock: 3, bleed: 1, fx: 'claw2', aiW: 2 },
@@ -189,29 +190,24 @@ const SKILL = ['냥냥 연타', '그림자 습격', '화살비', '방패 강타'
 const SKILL_COL = ['#ffb347', '#b58bff', '#9be37a', '#ffd84a', '#c9a5ff', '#fff3a0', '#ff5a4b', '#ffe27a', '#ff3b3b'];
 const SKILL_P = [0, 0.05, 0.10, 0.15, 0.20];   // 본진 해금 레벨별 패시브 스킬 확률
 CATS.forEach((D) => { D.skill = SKILL[D.k]; D.sp = SKILL_P[D.unlock]; });
-const STAGES = [
-  { name: '골목 입구', inc: 0.65, gold: 40, lv: 1, bt: 1.6, eager: 0.15 },
-  { name: '쓰레기통 앞', inc: 0.75, gold: 50, lv: 1, bt: 1.4, eager: 0.2 },
-  { name: '생선가게 뒤', inc: 0.85, gold: 60, lv: 1, bt: 1.2, eager: 0.3 },
-  { name: '지붕 아래', inc: 0.95, gold: 70, lv: 1, bt: 1.1, eager: 0.35 },
-  { name: '빨래줄 골목', inc: 1.05, gold: 80, lv: 1, bt: 1.0, eager: 0.4 },
-  { name: '뒷골목 시장', inc: 1.15, gold: 90, lv: 1, bt: 0.9, eager: 0.45 },
-  { name: '폐공장 앞', inc: 1.25, gold: 100, lv: 1, bt: 0.8, eager: 0.5 },
-  { name: '붉은 달 골목', inc: 1.15, gold: 110, lv: 1, bt: 0.8, eager: 0.55 },
-  { name: '보스의 영역', inc: 1.2, gold: 120, lv: 1, bt: 0.7, eager: 0.6 },
-  { name: '표범의 소굴', inc: 1.3, gold: 150, lv: 1, bt: 0.5, eager: 0.7, boss: 1 },
+const DIFFS = [   // 난이도: 적 본진·적 고양이 체력 배율(내 쪽은 그대로)
+  { name: '쉬움', hp: 0.75, inc: 0.6, desc: '적 체력 25% 적음' },
+  { name: '보통', hp: 1.2, inc: 1.0, desc: '적 체력 20% 높음' },
+  { name: '어려움', hp: 1.5, inc: 1.05, desc: '적 체력 50% 높음', boss: 1 },
 ];
-let stage = 1, best = 1;
-try { best = clamp(parseInt(localStorage.getItem('alleycats.best'), 10) || 1, 1, STAGES.length); } catch (e) { best = 1; }
-stage = best;
+const AIP = { inc: 0.95, gold: 70, bt: 1.1, eager: 0.35 };   // 적 AI 공통 설정(수입 배율 · 시작 골드 · 본진 업그레이드 시기 · 강화 적극성)
+let diff = 1;
+try { const v = parseInt(localStorage.getItem('alleycats.diff'), 10); if (v >= 0 && v < DIFFS.length) diff = v; } catch (e) { diff = 1; }
+const hpMul = (team) => (team === 1 ? DIFFS[diff].hp : 1);
 const BASE_HP = [600, 900, 1200, 1500];
+const maxHp = (team, lv) => BASE_HP[lv - 1] * hpMul(team);
 const BASE_INC = [6, 8.5, 11, 14];
 const UP_COST = { base: [120, 260, 480], eco: [90, 170, 300], spd: [90, 170, 300], atk: [90, 170, 300], def: [90, 170, 300] };
 const GOLD_CAP = 600, EDGE = 215, BASE_CX = 140, MAX_CATS = 24;
 const UNLOCK_NAME = ['', '전사·마법사냥이', '용사냥이·삵', '치타·표범'];
 
-const mkSide = () => ({ gold: 60, baseLv: 1, hp: BASE_HP[0], up: { eco: 0, spd: 0, atk: 0, def: 0 }, hurt: 0 });
-let S = [mkSide(), mkSide()];
+const mkSide = (team = 0) => ({ gold: 60, baseLv: 1, hp: maxHp(team, 1), up: { eco: 0, spd: 0, atk: 0, def: 0 }, hurt: 0 });
+let S = [mkSide(0), mkSide(1)];
 const PLAYER_INC = 1.15;   // 플레이어 수입 보정(적 AI는 스테이지 배율만 적용)
 const incomeOf = (t) => BASE_INC[S[t].baseLv - 1] * (1 + 0.2 * S[t].up.eco) * (t ? G.aiMul : PLAYER_INC);
 
@@ -585,7 +581,7 @@ function buildBG(tone = 1) {
 
 /* ---------------- 게임 상태 ---------------- */
 let engine = null, G = null, bgTone = -1;
-function ensureBG() { const t = stage <= 3 ? 0 : stage <= 7 ? 1 : 2; if (t !== bgTone) { bgTone = t; buildBG(t); } }
+function ensureBG() { const t = diff; if (t !== bgTone) { bgTone = t; buildBG(t); } }
 const cam = { x: W / 2, y: H / 2, zoom: 1, tx: W / 2, ty: H / 2, tz: 1, shake: 0 };
 const parts = [], texts = [], shots = [], vfx = [];
 let slowManual = false;
@@ -597,10 +593,9 @@ function newGame() {
   const ground = Bodies.rectangle(W / 2, GROUND + 60, W * 4, 120, { isStatic: true, friction: 1, restitution: 0.05, collisionFilter: { category: CATC.ground, mask: 0xFFFF } });
   mkBody(ground, { kind: 'ground' });
   Composite.add(engine.world, ground);
-  S = [mkSide(), mkSide()];
-  G = { state: 'title', t: 0, ts: 1, slowT: 0, overT: 0, winner: -1, cd: {}, special: 0.4, cats: [], ai: { timer: 3 }, aiMul: 1.2, stats: { kills: 0, lost: 0 }, lastText: 0, deadBase: [false, false], hitQ: [], skT: 0, skN: Array(9).fill(0), force: 0 };
-  const st = STAGES[stage - 1]; G.st = st; G.aiMul = st.inc; S[1].gold = st.gold;
-  if (st.lv > 1) { S[1].baseLv = st.lv; S[1].hp = BASE_HP[st.lv - 1]; }
+  S = [mkSide(0), mkSide(1)];
+  G = { state: 'title', t: 0, ts: 1, slowT: 0, overT: 0, winner: -1, cd: {}, special: 0.4, special1: 0.4, cats: [], ai: { timer: 3 }, aiMul: 1.2, stats: { kills: 0, lost: 0 }, lastText: 0, deadBase: [false, false], hitQ: [], skT: 0, skN: Array(9).fill(0), force: 0 };
+  G.st = Object.assign({ boss: DIFFS[diff].boss || 0 }, AIP); G.aiMul = DIFFS[diff].inc; S[1].gold = AIP.gold;
   ensureBG();
   parts.length = 0; texts.length = 0; shots.length = 0; vfx.length = 0;
   cam.x = cam.tx = W / 2; cam.y = cam.ty = H / 2; cam.zoom = cam.tz = 1; cam.shake = 0;
@@ -698,13 +693,15 @@ function drawArrow(s) {
   line(-14, 0, 10, 0, 4, INK); line(-14, 0, 10, 0, 2, '#e9d2a1'); tri(10, -4.5, 18, 0, 10, 4.5); fs('#dfe6f2', 1.6);
   line(-14, 0, -18, -3.4, 2.2, '#ff6a4d'); line(-14, 0, -18, 3.4, 2.2, '#ff6a4d'); c.restore();
 }
-function dropCan() {
-  if (!G || G.state !== 'play' || G.special < 1) return;
-  G.special = 0;
-  const en = G.cats.filter((u) => u.g.team === 1);
-  const tx = clamp(en.length ? Math.min(...en.map((u) => u.position.x)) : W - 330, 400, W - 260);
+function dropCan(team = 0) {
+  if (!G || G.state !== 'play') return;
+  if ((team ? G.special1 : G.special) < 1) return;
+  if (team) G.special1 = 0; else G.special = 0;
+  let tx;
+  if (team === 0) { const en = G.cats.filter((u) => u.g.team === 1); tx = clamp(en.length ? Math.min(...en.map((u) => u.position.x)) : W - 330, 400, W - 260); }
+  else { const mine = G.cats.filter((u) => u.g.team === 0); tx = clamp(mine.length ? Math.max(...mine.map((u) => u.position.x)) - 40 : 330, 260, W - 400); pop(tx, GROUND - 260, '적 참치캔!', '#ff8a8a', 44); }
   const b = Bodies.rectangle(tx, -120, 120, 86, { density: 0.03, restitution: 0.1, friction: 0.8, collisionFilter: { category: CATC.can, mask: CATC.ground } });
-  mkBody(b, { kind: 'can', hit: false, life: 420, w: 120, h: 86 });
+  mkBody(b, { kind: 'can', team, hit: false, life: 420, w: 120, h: 86 });
   Body.setAngle(b, rnd(-0.25, 0.25)); Body.setVelocity(b, { x: 0, y: 20 });
   Composite.add(engine.world, b);
   tone(900, 200, 0.4, 'sine', 0.2);
@@ -715,7 +712,7 @@ function onCollide(e) {
       if (a.g && a.g.kind === 'can' && !a.g.hit && o.g && o.g.kind === 'ground') {
         a.g.hit = true; a.g.life = 230; cam.shake = 24; G.slowT = 50;
         pop(a.position.x, a.position.y - 80, '쾅!!', '#ffcf5a', 64); fx('dust', a.position.x, GROUND - 6, 14); fx('star', a.position.x, GROUND - 40, 8);
-        explode(a.position.x, GROUND - 30, 0, 70, 190, 1.4); sfx('boom');
+        explode(a.position.x, GROUND - 30, a.g.team || 0, 70, 190, 1.4); sfx('boom');
       }
     }
   }
@@ -729,7 +726,7 @@ function spawnCat(team, k) {
   const x = (team ? W - EDGE + 24 : EDGE - 24) + rnd(-8, 8);
   const b = Bodies.rectangle(x, GROUND - D.h / 2 - 1, D.w * 0.8, D.h, { density: 0.002, friction: 0.05, frictionAir: 0.02, restitution: 0, collisionFilter: { category: CATC.unit, mask: CATC.ground } });
   Body.setInertia(b, Infinity);
-  mkBody(b, { kind: 'cat', k, team, coat: (Math.random() * 3) | 0, hp: D.hp, max: D.hp, cd: D.cd * 0.5, face: team ? -1 : 1, anim: rnd(0, 6), hurt: 0, atk: 0, moving: false, stun: 0, spin: 0,
+  mkBody(b, { kind: 'cat', k, team, coat: (Math.random() * 3) | 0, hp: D.hp * hpMul(team), max: D.hp * hpMul(team), cd: D.cd * 0.5, face: team ? -1 : 1, anim: rnd(0, 6), hurt: 0, atk: 0, moving: false, stun: 0, spin: 0,
     lane: rnd(-14, 14), jit: rnd(-6, 6), first: true, w: D.w, h: D.h, dead: false });
   Composite.add(engine.world, b); G.cats.push(b);
   fx('dust', x, GROUND - 4, 3);
@@ -743,8 +740,8 @@ function buy(team, key) {
   if (cost == null || s.gold < cost || G.state !== 'play') return false;
   s.gold -= cost;
   if (key === 'base') {
-    const prev = BASE_HP[s.baseLv - 1]; s.baseLv++;
-    const mx = BASE_HP[s.baseLv - 1]; s.hp = Math.min(mx, s.hp + (mx - prev) + mx * 0.3);
+    const prev = maxHp(team, s.baseLv); s.baseLv++;
+    const mx = maxHp(team, s.baseLv); s.hp = Math.min(mx, s.hp + (mx - prev) + mx * 0.3);
     const cx = team ? W - BASE_CX : BASE_CX;
     pop(cx, GROUND - 190, `본진 Lv${s.baseLv}!`, '#ffcf5a', 44); fx('star', cx, GROUND - 100, 10); cam.shake = Math.max(cam.shake, 8);
     if (UNLOCK_NAME[s.baseLv - 1]) throttledPop(cx, GROUND - 240, `${UNLOCK_NAME[s.baseLv - 1]} 해금`, '#9df0cf');
@@ -1016,6 +1013,10 @@ function aiThink(ts) {
   const A = G.ai; A.timer -= ts / 60; if (A.timer > 0) return;
   A.timer = rnd(0.7, 1.4);
   const st = G.st, me = S[1], lvl = me.baseLv, my = G.cats.filter((u) => u.g.team === 1), th = G.cats.filter((u) => u.g.team === 0);
+  if (G.special1 >= 1 && th.length) {   // 적 참치캔: 내 고양이가 몰려 있거나 본진이 위험할 때
+    const lead = Math.max(...th.map((u) => u.position.x)), near = th.filter((u) => Math.abs(u.position.x - lead) < 220).length;
+    if (near >= 3 || (me.hp < maxHp(1, lvl) * 0.35 && near >= 2)) { dropCan(1); return; }
+  }
   if (lvl < 4 && G.t >= [35, 75, 125][lvl - 1] * st.bt) {
     if (me.gold >= UP_COST.base[lvl - 1]) { buy(1, 'base'); return; }
     if (th.length < my.length + 3) return;     // 본진 업그레이드 자금을 모은다 (위급하지 않을 때)
@@ -1056,7 +1057,7 @@ function step() {
   if (G.state === 'play') {
     G.t += ts / 60;
     for (const t of [0, 1]) S[t].gold = Math.min(GOLD_CAP, S[t].gold + incomeOf(t) * ts / 60);
-    G.special = Math.min(1, G.special + ts / (60 * 24));
+    G.special = Math.min(1, G.special + ts / (60 * 24)); G.special1 = Math.min(1, G.special1 + ts / (60 * 24));
     for (const k in G.cd) G.cd[k] = Math.max(0, G.cd[k] - ts);
     aiThink(ts); G.skT = Math.max(0, G.skT - ts);
     if (G.hitQ.length) { const due = []; G.hitQ = G.hitQ.filter((q) => { q.t -= ts; if (q.t <= 0) { due.push(q); return false; } return true; }); for (const q of due) if (G.state === 'play') q.fn(); }
@@ -1126,33 +1127,28 @@ function endGame(winner) {
 
 /* ---------------- 본진 그리기 ---------------- */
 const BASE_H = [90, 125, 165, 205];
+const PAL0 = { box: '#c99a5b', cream: '#e9d3a1', door: '#2c2133', glow: '#ffd98a', box2: '#d8aa6b', post: '#e6c98f', stripe: '#a07a3c', ham: '#6bd5a9', top: '#e0b873', glow4: '#ffe08a', crown: '#ffd23f' };
+const PAL1 = { box: '#6b5a86', cream: '#cfc6e4', door: '#2c2133', glow: '#ff9b8a', box2: '#7d6a9c', post: '#9a8fb4', stripe: '#4a3d66', ham: '#ff7a6b', top: '#76679a', glow4: '#ff8a7a', crown: '#ff5a4b' };
+// 캣타워: 1단계 박스 → 2단계 박스 두 개 → 3단계 스크래처+해먹 → 4단계 꼭대기 성. 적 쪽은 좌우 반전 + 어두운 팔레트.
+function drawTower(lv, P, flagCol) {
+  rr(-66, -80, 132, 80, 6); fs(P.box, 3); c.fillStyle = P.cream; c.fillRect(-12, -80, 24, 80);
+  c.beginPath(); c.moveTo(-20, 0); c.lineTo(-20, -32); c.arc(0, -32, 20, Math.PI, 0); c.lineTo(20, 0); c.closePath(); fs(P.door, 2.6);
+  c.globalAlpha = 0.55; ell(0, -22, 12, 18); c.fillStyle = P.glow; c.fill(); c.globalAlpha = 1;
+  if (lv >= 2) { rr(-48, -136, 96, 56, 6); fs(P.box2, 3); circ(0, -108, 13); fs(P.door, 2.4); c.fillStyle = P.cream; c.fillRect(-48, -112, 96, 7); }
+  if (lv >= 3) { rr(70, -140, 12, 140, 3); fs(P.post, 2.6); for (let y = -130; y < -8; y += 12) line(70, y, 82, y + 5, 1.6, P.stripe); rr(54, -150, 44, 9, 4); fs(P.box2, 2.6); ell(-80, -50, 18, 7); fs(P.ham, 2.4); }
+  if (lv >= 4) { rr(-32, -186, 64, 50, 4); fs(P.top, 3); for (const x of [-32, -12, 8, 28]) { c.fillStyle = P.top; c.fillRect(x, -196, 12, 12); c.lineWidth = 2.6; c.strokeStyle = INK; c.strokeRect(x, -196, 12, 12); } c.globalAlpha = 0.7; circ(0, -162, 11); c.fillStyle = P.glow4; c.fill(); c.globalAlpha = 1; tri(-12, -204, -6, -216, 0, -204); fs(P.crown, 2); tri(0, -204, 6, -216, 12, -204); fs(P.crown, 2); }
+  const top = -BASE_H[lv - 1] - (lv >= 4 ? 6 : 0);
+  line(-50, top, -50, top - 34, 3); c.beginPath(); c.moveTo(-50, top - 34); c.lineTo(-18, top - 26); c.lineTo(-50, top - 16); c.closePath(); fs(flagCol, 2.4);
+}
 function drawBase(team) {
   const s = S[team], lv = s.baseLv, cx = team ? W - BASE_CX : BASE_CX;
   c.save(); c.translate(cx + (s.hurt > 0 ? rnd(-2, 2) : 0), GROUND + 2);
-  if (team === 0) {      // 박스 캣타워
-    rr(-66, -80, 132, 80, 6); fs('#c99a5b', 3); c.fillStyle = '#e9d3a1'; c.fillRect(-12, -80, 24, 80);
-    c.beginPath(); c.moveTo(-20, 0); c.lineTo(-20, -32); c.arc(0, -32, 20, Math.PI, 0); c.lineTo(20, 0); c.closePath(); fs('#2c2133', 2.6);
-    c.globalAlpha = 0.55; ell(0, -22, 12, 18); c.fillStyle = '#ffd98a'; c.fill(); c.globalAlpha = 1;
-    if (lv >= 2) { rr(-48, -136, 96, 56, 6); fs('#d8aa6b', 3); circ(0, -108, 13); fs('#2c2133', 2.4); c.fillStyle = '#e9d3a1'; c.fillRect(-48, -112, 96, 7); }
-    if (lv >= 3) { rr(70, -140, 12, 140, 3); fs('#e6c98f', 2.6); for (let y = -130; y < -8; y += 12) line(70, y, 82, y + 5, 1.6, '#a07a3c'); rr(54, -150, 44, 9, 4); fs('#d8aa6b', 2.6); ell(-80, -50, 18, 7); fs('#6bd5a9', 2.4); }
-    if (lv >= 4) { rr(-32, -186, 64, 50, 4); fs('#e0b873', 3); for (const x of [-32, -12, 8, 28]) { c.fillStyle = '#e0b873'; c.fillRect(x, -196, 12, 12); c.lineWidth = 2.6; c.strokeStyle = INK; c.strokeRect(x, -196, 12, 12); } c.globalAlpha = 0.7; circ(0, -162, 11); c.fillStyle = '#ffe08a'; c.fill(); c.globalAlpha = 1; tri(-12, -204, -6, -216, 0, -204); fs('#ffd23f', 2); tri(0, -204, 6, -216, 12, -204); fs('#ffd23f', 2); }
-    const top = -BASE_H[lv - 1] - (lv >= 4 ? 6 : 0);
-    line(-50, top, -50, top - 34, 3); c.beginPath(); c.moveTo(-50, top - 34); c.lineTo(-18, top - 26); c.lineTo(-50, top - 16); c.closePath(); fs(TEAM[0].main, 2.4);
-  } else {               // 쓰레기통 아지트
-    rr(-68, -66, 136, 66, 5); fs('#4d6b5a', 3); for (let x = -50; x <= 50; x += 20) line(x, -62, x, -4, 2, 'rgba(0,0,0,.35)');
-    c.beginPath(); c.moveTo(-72, -66); c.lineTo(72, -66); c.lineTo(66, -80); c.lineTo(-66, -88); c.closePath(); fs('#3a4f44', 3);
-    c.globalAlpha = 0.6; ell(0, -30, 15, 12); c.fillStyle = '#ff5a4b'; c.fill(); c.globalAlpha = 1; ell(0, -30, 15, 12); c.lineWidth = 2.6; c.strokeStyle = INK; c.stroke();
-    if (lv >= 2) { for (const x of [-48, -6]) { rr(x, -134, 38, 48, 5); fs('#8a93a6', 2.8); rr(x - 3, -142, 44, 10, 4); fs('#aab2c6', 2.6); line(x + 8, -128, x + 8, -92, 2, 'rgba(0,0,0,.3)'); line(x + 24, -128, x + 24, -92, 2, 'rgba(0,0,0,.3)'); } }
-    if (lv >= 3) { circ(58, -20, 18); fs('#2a2a34', 2.8); circ(58, -20, 8); fs('#8a93a6', 2); circ(78, -12, 14); fs('#2a2a34', 2.6); rr(-90, -60, 16, 60, 2); fs('#a0522d', 2.6); rr(34, -150, 30, 64, 3); fs('#a0522d', 2.6); }
-    if (lv >= 4) { rr(-30, -190, 60, 48, 4); fs('#6e7587', 3); for (let x = -30; x <= 22; x += 12) { tri(x, -190, x + 6, -208, x + 12, -190); fs('#c9d2e4', 2); } c.globalAlpha = 0.7; circ(0, -166, 11); c.fillStyle = '#ff3b2f'; c.fill(); c.globalAlpha = 1; }
-    const top = -BASE_H[lv - 1] - (lv >= 4 ? 18 : 0);
-    line(50, top, 50, top - 34, 3); c.beginPath(); c.moveTo(50, top - 34); c.lineTo(18, top - 26); c.lineTo(50, top - 16); c.closePath(); fs(TEAM[1].main, 2.4);
-    line(40, top - 28, 28, top - 24, 1.4, '#fff'); line(34, top - 31, 34, top - 21, 1.4, '#fff');
-  }
+  if (team) c.scale(-1, 1);
+  drawTower(lv, team ? PAL1 : PAL0, TEAM[team].main);
   c.restore();
   if (s.hurt > 0) { c.globalAlpha = s.hurt / 8 * 0.4; rr(cx - 72, GROUND - BASE_H[lv - 1] - 6, 144, BASE_H[lv - 1] + 8, 8); c.fillStyle = '#fff'; c.fill(); c.globalAlpha = 1; }
   // 체력 바
-  const mx = BASE_HP[lv - 1], frac = clamp(s.hp / mx, 0, 1), y = GROUND - BASE_H[lv - 1] - (lv >= 4 ? 40 : 28) - 24;
+  const mx = maxHp(team, lv), frac = clamp(s.hp / mx, 0, 1), y = GROUND - BASE_H[lv - 1] - (lv >= 4 ? 40 : 28) - 24;
   c.fillStyle = 'rgba(36,28,46,.85)'; c.beginPath(); c.roundRect(cx - 62, y, 124, 12, 6); c.fill();
   c.fillStyle = TEAM[team].main; c.beginPath(); c.roundRect(cx - 60, y + 2, 120 * frac, 8, 4); c.fill();
   c.font = '15px Jua, sans-serif'; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = INK; c.lineJoin = 'round';
@@ -1269,7 +1265,7 @@ const setTxt = (el, t, id) => { if (cache[id] !== t) { cache[id] = t; el.textCon
 function hud() {
   if (!G) return;
   const s = S[0], gold = Math.floor(s.gold), play = G.state === 'play';
-  setTxt($('coinN'), String(gold), 'gold'); setTxt($('lvN'), String(s.baseLv), 'lv'); setTxt($('stgN'), String(stage), 'stg'); setTxt($('inc'), `+${incomeOf(0).toFixed(1)}/초`, 'inc');
+  setTxt($('coinN'), String(gold), 'gold'); setTxt($('lvN'), String(s.baseLv), 'lv'); setTxt($('stgN'), DIFFS[diff].name, 'stg'); setTxt($('inc'), `+${incomeOf(0).toFixed(1)}/초`, 'inc');
   const sp = $('bSpecial'); $('cdBar').style.transform = `scaleX(${1 - G.special})`; sp.classList.toggle('ready', G.special >= 1 && play);
   for (const D of CATS) {
     const k = cards[D.k], locked = s.baseLv < D.unlock;
@@ -1288,21 +1284,22 @@ function hud() {
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2200); }
 function showEnd() {
   const win = G.winner === 0, stars = win ? (G.t <= 100 ? 3 : G.t <= 180 ? 2 : 1) : 0;   // 빨리 이길수록 별이 많다
-  if (win) { best = Math.max(best, Math.min(STAGES.length, stage + 1)); try { localStorage.setItem('alleycats.best', String(best)); } catch (e) { /* 저장 없이도 진행 가능 */ } }
-  $('endT').textContent = win ? (stage >= STAGES.length ? '올 클리어!' : `스테이지 ${stage} 클리어!`) : '앗, 패배...'; $('endT').className = win ? 'win' : 'lose';
+  $('endT').textContent = win ? `${DIFFS[diff].name} 클리어!` : '앗, 패배...'; $('endT').className = win ? 'win' : 'lose';
   $('stars').innerHTML = [0, 1, 2].map((i) => `<i class="${i < stars ? 'on' : ''}">★</i>`).join('');
   $('endS').textContent = `쓰러뜨린 고양이 ${G.stats.kills}마리 · 잃은 고양이 ${G.stats.lost}마리 · 본진 Lv${S[0].baseLv} · ${Math.round(G.t)}초`;
-  $('bAgain').textContent = win ? (stage < STAGES.length ? '다음 스테이지 ▶' : '처음부터') : '다시 도전'; $('bRetry').hidden = !win;
+  $('bAgain').textContent = win ? '한 번 더' : '다시 도전'; $('bRetry').textContent = '난이도 바꾸기'; $('bRetry').hidden = false;
   $('ovEnd').hidden = false;
 }
-function startGame() { audio(); newGame(); setStageUI(); G.state = 'play'; $('ovTitle').hidden = true; $('ovEnd').hidden = true; }
+function startGame() { audio(); newGame(); setDiffUI(); G.state = 'play'; $('ovTitle').hidden = true; $('ovEnd').hidden = true; }
 
 $('bStart').addEventListener('click', startGame);
-function setStageUI() { $('stgT').textContent = `스테이지 ${stage}`; $('stgD').textContent = STAGES[stage - 1].name + (STAGES[stage - 1].boss ? ' · 보스전' : ''); $('bPrev').disabled = stage <= 1; $('bNext').disabled = stage >= best; }
-$('bPrev').addEventListener('click', () => { stage = Math.max(1, stage - 1); setStageUI(); });
-$('bNext').addEventListener('click', () => { stage = Math.min(best, stage + 1); setStageUI(); });
-$('bAgain').addEventListener('click', () => { if (G.winner === 0) stage = stage < STAGES.length ? stage + 1 : 1; startGame(); });
-$('bRetry').addEventListener('click', startGame);
+function setDiffUI() {
+  $('stgD').textContent = `${DIFFS[diff].name}: ${DIFFS[diff].desc}`;
+  document.querySelectorAll('.dif').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.d === diff)));
+}
+document.querySelectorAll('.dif').forEach((b) => b.addEventListener('click', () => { diff = +b.dataset.d; try { localStorage.setItem('alleycats.diff', String(diff)); } catch (e) { /* 저장 없이도 진행 가능 */ } setDiffUI(); }));
+$('bAgain').addEventListener('click', () => startGame());
+$('bRetry').addEventListener('click', () => { $('ovEnd').hidden = true; $('ovTitle').hidden = false; setDiffUI(); });
 $('bSpecial').addEventListener('click', () => { audio(); dropCan(); });
 function setSlow(v) { slowManual = v; $('bSlow').classList.toggle('on', v); }
 $('bSlow').addEventListener('click', () => setSlow(!slowManual));
@@ -1355,7 +1352,7 @@ function frame(now) {
   render(); hud();
   if (mr) { const s = Math.floor((now - recStart) / 1000); $('recT').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; if (s >= 90) stopRec(); }
 }
-buildBG(); newGame(); setStageUI();
+buildBG(); newGame(); setDiffUI();
 requestAnimationFrame(frame);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { buildBG(Math.max(0, bgTone)); paintIcons(); });
 paintIcons();
