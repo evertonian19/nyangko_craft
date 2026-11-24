@@ -477,27 +477,80 @@ function pHead(k, s) {
   });
 }
 // 앞손에 쥔 무기 (손 위치/각도는 armPose 에서). 휘두를 때는 흰 궤적 호가 따라온다.
+// ---- 판타지 장비 도우미 ----
+const GRADS = {};
+const gradV = (key, x0, y0, x1, y1, stops) => (GRADS[key] ||= (() => { const g = c.createLinearGradient(x0, y0, x1, y1); stops.forEach(([o, col]) => g.addColorStop(o, col)); return g; })());
+const STEEL = (y) => gradV('steel' + y, 0, -y, 0, y, [[0, '#ffffff'], [0.45, '#c3cde0'], [1, '#7f8aa8']]);
+const GOLDG = () => gradV('gold', 0, -6, 0, 6, [[0, '#fff0a8'], [0.5, '#e0b13a'], [1, '#8a5f12']]);
+const WOODG = () => gradV('wood', -2, 0, 2, 0, [[0, '#c48a52'], [0.55, '#8a5a33'], [1, '#4a2c16']]);
+const fillG = (g, flat, lw = 1.8) => { c.fillStyle = (!LOD.on && g) ? g : flat; c.fill(); stk(lw); };
+const glowAt = (x, y, r, col, a) => { c.globalAlpha = a * 0.45; circ(x, y, r * 1.7); c.fillStyle = col; c.fill(); c.globalAlpha = a; circ(x, y, r); c.fill(); c.globalAlpha = 1; };
+const gemAt = (x, y, r, col, hl = '#ffffff') => { circ(x, y, r); c.fillStyle = col; c.fill(); stk(1.2); c.fillStyle = hl; c.globalAlpha = 0.85; c.fillRect(x - r * 0.5, y - r * 0.55, r * 0.6, r * 0.5); c.globalAlpha = 1; };
+const TRC = { 1: '#c9a5ff', 2: '#9bffb0', 3: '#9ec9ff', 4: '#d6b8ff', 5: '#ffe27a' };   // 무기별 휘두름 궤적 색
 function pWeapon(k, s) {
-  const P = armPose(k, s, true), sw = P.sw;
+  const P = armPose(k, s, true), sw = P.sw, fxOn = !LOD.on && s.mood !== 2;
   withLean(s, () => {
     if (s.atkP > 0.2 && s.atkP < 0.78 && SWR[k]) {
-      const e = swingE(s.atkP), th = -2.4 + 3.4 * e, a0 = Math.max(-2.7, th - 1.5), R = SWR[k], TM = TEAM[s.team];
-      for (const [w, col, al] of [[9, TM.main, 0.35], [4.5, '#ffffff', 0.85]]) { c.globalAlpha = al * (1 - Math.abs(s.atkP - 0.45) * 1.2); c.beginPath(); c.arc(P.sx, P.sy, R + 8, a0, th); c.lineWidth = w; c.strokeStyle = col; c.lineCap = 'round'; c.stroke(); }
+      const e = swingE(s.atkP), th = -2.4 + 3.4 * e, a0 = Math.max(-2.7, th - 1.5), R = SWR[k], col = TRC[k] || TEAM[s.team].main, fade = 1 - Math.abs(s.atkP - 0.45) * 1.2;
+      for (const [w, cc, al] of [[13, col, 0.2], [8, col, 0.45], [3.6, '#ffffff', 0.9]]) { c.globalAlpha = al * fade; c.beginPath(); c.arc(P.sx, P.sy, R + 8, a0, th); c.lineWidth = w; c.strokeStyle = cc; c.lineCap = 'round'; c.stroke(); }
+      if (fxOn) { c.globalAlpha = fade; const ex = P.sx + Math.cos(th) * (R + 8), ey = P.sy + Math.sin(th) * (R + 8); glowAt(ex, ey, 3, '#ffffff', 0.9); }
       c.globalAlpha = 1;
     }
     c.save(); c.translate(P.hx, P.hy);
-    if (k === 1) { c.rotate(P.ang); rr(-6, -1.8, 7, 3.6, 1); shade('#7b3f2a', -2, 2, 1, '#2a140c'); tri(0, -2.6, 16, 0.8, 0, 2.6); shade('#dfe6f2', -2.6, 2.6, 1, '#5d6482'); pline(2, 0, 13, 0.8, '#ffffff'); }
-    else if (k === 2) {
-      c.translate(-8, 0); c.beginPath(); c.arc(-9, 0, 17, -1.1, 1.1); c.lineWidth = 3.4; c.strokeStyle = '#3a2414'; c.lineCap = 'round'; c.stroke(); c.lineWidth = 1.8; c.strokeStyle = '#a06a3c'; c.stroke();
-      const tx = -9 + Math.cos(1.1) * 17, ty = Math.sin(1.1) * 17, B = armPose(k, s, false), bx = B.hx - (P.hx - 8) - 2, by = B.hy - P.hy;
-      const pull = sw > 0.05 ? [bx, by] : [tx, 0]; pline(tx, -ty, pull[0], pull[1], '#ffffff', 0.9); pline(pull[0], pull[1], tx, ty, '#ffffff', 0.9);
-      if (sw > 0.1) { pline(pull[0], pull[1], 12, 0, '#e9eefb', 1.2); pline(pull[0], pull[1], pull[0] + 3, pull[1] - 1.6, '#ff6a4d', 1.4); }
-    } else if (k === 3) { c.rotate(P.ang); rr(0, -2.4, 26, 4.8, 1.6); shade('#dfe6f2', -2.4, 2.4, 1, '#5d6482'); pline(2, -1, 24, -1, '#ffffff'); rr(-1.4, -5.8, 3.6, 11.6, 1.2); shade(GOLD, -5.8, 5.8, 1, '#6a4a10'); rr(-7, -2, 5.6, 4, 1.2); shade('#7b3f2a', -2, 2, 1, '#2a140c'); }
-    else if (k === 4) {
-      c.rotate(-0.12 - sw * 0.5); rr(-1.6, -44, 3.2, 62, 1.4); shade('#8a5a33', -44, 18, 1, '#3a2414');
-      const glow = 6.5 + sw * 4 + Math.sin(s.tw) * 0.9; c.globalAlpha = 0.5; circ(0, -48, glow + 3.5); c.fillStyle = '#c9a5ff'; c.fill(); c.globalAlpha = 1; circ(0, -48, glow - 0.5); shade('#b58bff', -54, -42, 1, '#4a2a8a'); px(-glow * 0.3, -48 - glow * 0.3, '#ffffff');
-    } else if (k === 5) { c.rotate(P.ang); rr(0, -4.8, 44, 9.6, 2.8); shade('#e6ebf5', -4.8, 4.8, 1.1, '#5d6482'); pline(3, 0, 40, 0, '#aab3c8'); pline(4, -2, 38, -2, '#ffffff'); rr(-2, -9.6, 5, 19.2, 1.8); shade(GOLD, -9.6, 9.6, 1, '#6a4a10'); rr(-11, -3.2, 9.6, 6.4, 1.6); shade('#7b3f2a', -3.2, 3.2, 1, '#2a140c'); circ(1, 0, 2); c.fillStyle = '#ff4d3d'; c.fill(); }
-    else if (k === 7 && s.moving) { c.restore(); c.save(); for (const [y, l] of [[-2, 16], [7, 24], [15, 14]]) pline(-12, y, -12 - l, y, 'rgba(255,255,255,.7)', 1.4); }
+    if (k === 1) {   // 그림자 단검
+      c.rotate(P.ang);
+      c.beginPath(); c.moveTo(0, -2.6); c.quadraticCurveTo(10, -3.8, 18, 1.2); c.quadraticCurveTo(9, 2.6, 0, 2.8); c.closePath(); fillG(STEEL(3), '#dfe6f2');
+      pline(2, -2, 14, -1.2, '#ffffff', 0.9); pline(3, 0.3, 12, 0.6, '#c9a5ff', 1);
+      rr(-2.6, -4.8, 3.6, 9.6, 1.4); fillG(null, '#6a3fb0'); gemAt(-0.8, 0, 1.4, '#d6b8ff');
+      rr(-9.4, -1.9, 6.8, 3.8, 1.4); fillG(null, '#4a2a1c'); for (const x of [-8.4, -6.6, -4.8]) pline(x, -1.8, x + 1.4, 1.8, '#a0642f', 1);
+      circ(-10, 0, 1.9); fillG(null, GOLD, 1.4);
+      if (fxOn) glowAt(17, 1, 3.2 + Math.sin(s.tw * 1.6) * 0.6 + sw * 2, '#b58bff', 0.4 + sw * 0.3);
+    } else if (k === 2) {   // 숲의 장궁
+      c.translate(-8, 0);
+      const bw = (w, col) => { c.beginPath(); c.arc(-9, 0, 17, -1.15, 1.15); c.lineWidth = w; c.strokeStyle = col; c.lineCap = 'round'; c.stroke(); };
+      bw(5, OUT); bw(3.4, '#7a4a28'); bw(1.4, '#d49a5c');
+      const ex = -9 + Math.cos(1.15) * 17, ey = Math.sin(1.15) * 17;
+      for (const y of [-ey, ey]) { circ(ex + 0.6, y, 2); c.fillStyle = '#6bd56b'; c.fill(); stk(1.2); }
+      rr(6, -3.8, 4, 7.6, 1.4); fillG(GOLDG(), GOLD, 1.5); gemAt(8, 0, 1.3, '#7dff9b');
+      const B = armPose(k, s, false), bx = B.hx - (P.hx - 8) - 2, by = B.hy - P.hy, tx = ex, ty = ey;
+      const pull = sw > 0.05 ? [bx, by] : [tx, 0], sc = sw > 0.1 ? '#e9ffe0' : '#ffffff';
+      pline(tx, -ty, pull[0], pull[1], sc, 0.9); pline(pull[0], pull[1], tx, ty, sc, 0.9);
+      if (sw > 0.1) {
+        pline(pull[0], pull[1], 14, 0, '#e9d2a1', 1.5); tri(13, -2.8, 20, 0, 13, 2.8); fillG(null, '#9bffb0', 1.2);
+        pline(pull[0], pull[1], pull[0] + 3.4, pull[1] - 1.8, '#ff6a4d', 1.5); pline(pull[0], pull[1], pull[0] + 3.4, pull[1] + 1.8, '#ffd84a', 1.5);
+        if (fxOn) glowAt(19, 0, 3, '#7dff9b', 0.55);
+      } else if (fxOn) glowAt(8, 0, 2.6, '#7dff9b', 0.3 + Math.sin(s.tw * 1.4) * 0.1);
+    } else if (k === 3) {   // 기사의 장검
+      c.rotate(P.ang);
+      pth([[0, -2.7], [22, -2.5], [29, 0], [22, 2.5], [0, 2.7]]); fillG(STEEL(3), '#dfe6f2');
+      pline(3, 0, 23, 0, '#6b7596', 1.2); pline(2, -1.8, 24, -1.7, '#ffffff', 0.9);
+      if (fxOn) { const gx = 4 + ((s.tw * 0.5) % 1) * 22; c.globalAlpha = 0.85; pline(gx - 2, -2.2, gx + 1.2, 2.2, '#ffffff', 1.5); c.globalAlpha = 1; }
+      rr(-1.8, -6.4, 4, 12.8, 1.6); fillG(GOLDG(), GOLD); for (const y of [-6.4, 6.4]) { circ(0.2, y, 2); fillG(GOLDG(), GOLD, 1.4); }
+      rr(-8.4, -1.9, 7, 3.8, 1.3); fillG(null, '#33407a'); for (const x of [-7.4, -5.6, -3.8]) pline(x, -1.8, x + 1.4, 1.8, '#5d72c8', 1);
+      circ(-10.4, 0, 2.5); fillG(GOLDG(), GOLD, 1.4); gemAt(-10.4, 0, 1.4, '#5fa8ff');
+      if (fxOn && sw > 0.1) glowAt(16, 0, 7, '#9ec9ff', 0.25 * sw);
+    } else if (k === 4) {   // 별빛 지팡이
+      c.rotate(-0.12 - sw * 0.5);
+      rr(-1.9, -40, 3.8, 58, 1.6); fillG(WOODG(), '#8a5a33', 1.6);
+      for (let y = -32; y < 12; y += 9) pline(-1.9, y, 1.9, y + 3, '#3a2414', 1);
+      for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * 2.4, -41); c.quadraticCurveTo(sg * 9, -45, sg * 6.6, -56); c.lineWidth = 3.6; c.strokeStyle = OUT; c.lineCap = 'round'; c.stroke(); c.lineWidth = 1.7; c.strokeStyle = GOLD; c.stroke(); }
+      rr(-3.4, -43, 6.8, 4.4, 1.4); fillG(GOLDG(), GOLD, 1.5);
+      const pu = 1 + sw * 0.28 + Math.sin(s.tw * 1.5) * 0.05;
+      if (fxOn) glowAt(0, -50, 8 * pu + sw * 3, '#c9a5ff', 0.32 + sw * 0.3);
+      c.save(); c.translate(0, -50); c.scale(pu, pu); pth([[0, -9], [5.4, 0], [0, 9], [-5.4, 0]]); c.fillStyle = LOD.on ? '#b58bff' : gradV('crys', 0, -9, 0, 9, [[0, '#f4eaff'], [0.5, '#b58bff'], [1, '#5a2ea0']]); c.fill(); stk(1.7);
+      pline(0, -9, 0, 9, 'rgba(255,255,255,.45)', 0.8); pline(-5.4, 0, 5.4, 0, 'rgba(255,255,255,.25)', 0.7); px(-1.6, -3.4, '#ffffff'); c.restore();
+      if (fxOn) for (let i = 0; i < 3; i++) { const a = s.tw * 1.3 + i * 2.094; circ(Math.cos(a) * 11, -50 + Math.sin(a) * 4, 1.1); c.fillStyle = '#efe0ff'; c.fill(); }
+    } else if (k === 5) {   // 성검
+      c.rotate(P.ang);
+      if (fxOn) { c.globalAlpha = 0.1 + Math.sin(s.tw * 2) * 0.04 + sw * 0.25; rr(-2, -9, 54, 18, 9); c.fillStyle = '#ffe27a'; c.fill(); c.globalAlpha = 1; }
+      pth([[0, -5.2], [38, -5], [47, 0], [38, 5], [0, 5.2]]); fillG(STEEL(5), '#e6ebf5', 2);
+      pline(3, 0, 41, 0, '#aab3c8', 1.2); pline(3, -3.7, 40, -3.7, '#ffffff', 1.1);
+      for (const x of [12, 22, 32]) { pth([[x, -2.4], [x + 2.2, 0], [x, 2.4], [x - 2.2, 0]]); c.fillStyle = GOLD; c.fill(); if (fxOn) { c.globalAlpha = 0.5 + sw * 0.4; c.fillStyle = '#fff3a0'; c.fill(); c.globalAlpha = 1; } }
+      pth([[-2.4, -4.4], [1, -11.4], [4.6, -13.6], [4.6, -6], [4.6, 6], [4.6, 13.6], [1, 11.4], [-2.4, 4.4]]); fillG(GOLDG(), GOLD, 2);
+      gemAt(1.2, 0, 2.3, '#ff4d3d'); if (fxOn) glowAt(1.2, 0, 3, '#ff6a4d', 0.4);
+      rr(-12, -2.7, 9.6, 5.4, 1.6); fillG(null, '#6a2a2a'); for (const x of [-10.6, -8.4, -6.2, -4]) pline(x, -2.6, x + 1.4, 2.6, '#b8463f', 1);
+      circ(-13.4, 0, 3.2); fillG(GOLDG(), GOLD, 1.6); gemAt(-13.4, 0, 1.3, '#ffe27a');
+    } else if (k === 7 && s.moving) { c.restore(); c.save(); for (const [y, l] of [[-2, 16], [7, 24], [15, 14]]) pline(-12, y, -12 - l, y, 'rgba(255,255,255,.7)', 1.4); }
     c.restore();
   });
 }
@@ -690,8 +743,9 @@ function castOrb(u, tgt) {
 function drawArrow(s) {
   const a = Math.atan2(s.y - s.py, s.x - s.px) || (s.team ? Math.PI : 0);
   c.save(); c.translate(s.x, s.y); c.rotate(a);
-  line(-14, 0, 10, 0, 4, INK); line(-14, 0, 10, 0, 2, '#e9d2a1'); tri(10, -4.5, 18, 0, 10, 4.5); fs('#dfe6f2', 1.6);
-  line(-14, 0, -18, -3.4, 2.2, '#ff6a4d'); line(-14, 0, -18, 3.4, 2.2, '#ff6a4d'); c.restore();
+  if (!LOD.on) { c.globalAlpha = 0.3; line(-30, 0, -8, 0, 5, '#9bffb0'); c.globalAlpha = 0.55; circ(14, 0, 7); c.fillStyle = '#7dff9b'; c.fill(); c.globalAlpha = 1; }
+  line(-14, 0, 10, 0, 4, INK); line(-14, 0, 10, 0, 2, '#e9d2a1'); tri(10, -4.8, 19, 0, 10, 4.8); fs('#d9ffe0', 1.6);
+  line(-14, 0, -19, -3.8, 2.4, '#ff6a4d'); line(-14, 0, -19, 3.8, 2.4, '#ffd84a'); line(-10, 0, -14, -3.2, 1.8, '#ff6a4d'); line(-10, 0, -14, 3.2, 1.8, '#ffd84a'); c.restore();
 }
 function dropCan(team = 0) {
   if (!G || G.state !== 'play') return;
@@ -796,7 +850,7 @@ function drawVfx() {
       const r = v.size * (0.25 + k * 0.85); c.beginPath(); c.ellipse(0, 0, r, r * (v.sq || 1), 0, 0, TAU); c.lineWidth = 2 + 9 * (1 - k); c.strokeStyle = v.color; c.stroke();
     } else if (t === 'claw') {
       c.scale(v.dir * 1.45, 1.45);
-      for (let i = 0; i < 3; i++) { const p = clamp(k * 2.6 - i * 0.18, 0, 1), x0 = -16 + i * 14, y0 = -30; line(x0, y0, x0 + 20 * p, y0 + 46 * p, 9, INK); line(x0, y0, x0 + 20 * p, y0 + 46 * p, 5, v.col2 || '#ffb347'); line(x0 + 1, y0 + 2, x0 + 19 * p, y0 + 44 * p, 1.6, '#fff'); }
+      for (let i = 0; i < 3; i++) { const p = clamp(k * 2.6 - i * 0.18, 0, 1), x0 = -16 + i * 14, y0 = -30; line(x0, y0, x0 + 20 * p, y0 + 46 * p, 15, 'rgba(255,220,140,.28)'); line(x0, y0, x0 + 20 * p, y0 + 46 * p, 9, INK); line(x0, y0, x0 + 20 * p, y0 + 46 * p, 5, v.col2 || '#ffb347'); line(x0 + 1, y0 + 2, x0 + 19 * p, y0 + 44 * p, 1.6, '#fff'); }
     } else if (t === 'xslash') {
       c.scale(v.dir * 1.4, 1.4);
       for (const [x0, y0, x1, y1, d] of [[-34, -38, 34, 38, 0], [34, -38, -34, 38, 0.18]]) {
@@ -1209,7 +1263,12 @@ function render() {
   by.cat.sort((a, b) => a.g.lane - b.g.lane).forEach(drawCat);
   for (const s of shots) if (s.trail && s.kind !== 'arrow') s.trail.forEach((q, i, a) => { c.globalAlpha = (i + 1) / a.length * 0.5; circ(q.x, q.y, 3 + i * 1.4); c.fillStyle = '#c9a5ff'; c.fill(); });
   c.globalAlpha = 1;
-  for (const s of shots) { if (s.t < 0) continue; if (s.kind === 'arrow') { drawArrow(s); continue; } c.globalAlpha = 0.4; circ(s.x, s.y, 14); c.fillStyle = '#c9a5ff'; c.fill(); c.globalAlpha = 1; circ(s.x, s.y, 8); fs('#b58bff', 2); circ(s.x - 2, s.y - 2, 2.4); c.fillStyle = '#fff'; c.fill(); }
+  for (const s of shots) {
+    if (s.t < 0) continue; if (s.kind === 'arrow') { drawArrow(s); continue; }
+    c.globalAlpha = 0.25; circ(s.x, s.y, 20); c.fillStyle = '#c9a5ff'; c.fill(); c.globalAlpha = 0.45; circ(s.x, s.y, 14); c.fill(); c.globalAlpha = 1;
+    circ(s.x, s.y, 8); fs('#b58bff', 2); circ(s.x, s.y, 4.4); c.fillStyle = '#efe0ff'; c.fill();
+    const ra = (G ? G.fr : 0) * 0.25; for (let i = 0; i < 3; i++) { const a = ra + i * 2.094; circ(s.x + Math.cos(a) * 12, s.y + Math.sin(a) * 5, 1.6); c.fillStyle = '#fff'; c.fill(); }
+  }
   by.can.forEach(drawCan);
   drawVfx();
   for (const p of parts) {
