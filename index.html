@@ -195,7 +195,7 @@ canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: bl
 (() => {
 'use strict';
 const { Engine, Bodies, Body, Composite, Events } = Matter;
-const W = 1500, H = 720, GROUND = 610, INK = '#241c2e';
+const VW = 1500, W = 2200, H = 720, GROUND = 610, INK = '#241c2e';   // VW: 화면(캔버스) 폭 · W: 맵 전체 폭 (카메라가 전선을 따라간다)
 const CATC = { ground: 1, unit: 2, debris: 8, can: 32 };
 const TEAM = [
   { main: '#4a86ff', dark: '#2450b4', light: '#a9c8ff' },
@@ -887,8 +887,8 @@ function buildBG(tone = 1) {
   brickWall(-40, W + 40, 150, '#5b3a4a', 3);
   b.fillStyle = 'rgba(14,18,48,.55)'; b.fillRect(-40, 150, W + 80, 30);       // 지붕 그림자
   // 창문 (불 켜진 곳 몇 개)
-  for (let i = 0; i < 10; i++) {
-    const x = 70 + i * 144, y = 210 + (i % 2) * 70, lit = [1, 4, 6, 8].includes(i);
+  for (let i = 0, n = Math.floor((W - 140) / 144); i < n; i++) {
+    const x = 70 + i * 144, y = 210 + (i % 2) * 70, lit = [1, 4, 6, 8, 11, 13, 15].includes(i);
     box(x, y, 64, 80, '#2a2038', 4, 3.5); box(x + 6, y + 6, 52, 68, lit ? '#ffd98a' : '#1d2142', 3, 0);
     if (lit) { b.fillStyle = 'rgba(255,217,138,.18)'; b.fillRect(x - 14, y + 80, 92, 190); b.fillStyle = '#7a4a3a'; b.fillRect(x + 6, y + 6, 52, 14); }
     b.strokeStyle = INK; b.lineWidth = 3; b.beginPath(); b.moveTo(x + 32, y + 6); b.lineTo(x + 32, y + 74); b.moveTo(x + 6, y + 40); b.lineTo(x + 58, y + 40); b.stroke();
@@ -903,19 +903,21 @@ function buildBG(tone = 1) {
   b.strokeStyle = INK; b.lineWidth = 12; b.beginPath(); b.moveTo(W - 30, 150); b.lineTo(W - 30, GROUND); b.stroke(); b.strokeStyle = '#9aa1b5'; b.lineWidth = 7; b.stroke();
   // 낙서(발바닥)
   b.fillStyle = 'rgba(255,207,90,.7)'; const paw = (x, y, s) => { b.beginPath(); b.ellipse(x, y, 11 * s, 9 * s, 0, 0, TAU); b.fill(); for (const [dx, dy] of [[-12, -12], [-4, -17], [5, -17], [13, -12]]) { b.beginPath(); b.ellipse(x + dx * s, y + dy * s, 4.5 * s, 5.5 * s, 0, 0, TAU); b.fill(); } };
-  paw(W / 2, 330, 1.4); paw(W / 2 + 60, 300, 1);
-  // 가로등 (가운데) + 빛 번짐
-  const lg = b.createRadialGradient(W / 2, 250, 10, W / 2, 330, 330); lg.addColorStop(0, 'rgba(255,214,120,.5)'); lg.addColorStop(1, 'rgba(255,214,120,0)');
-  b.fillStyle = lg; b.fillRect(W / 2 - 400, 0, 800, GROUND);
-  b.strokeStyle = INK; b.lineWidth = 14; b.beginPath(); b.moveTo(W / 2, GROUND); b.lineTo(W / 2, 250); b.quadraticCurveTo(W / 2, 222, W / 2 - 40, 222); b.stroke();
-  b.strokeStyle = '#5d6482'; b.lineWidth = 8; b.stroke(); box(W / 2 - 66, 222, 50, 22, '#ffe08a', 8, 3.5);
+  paw(W / 2, 330, 1.4); paw(W / 2 + 60, 300, 1); paw(W * 0.27, 340, 1.1); paw(W * 0.73, 320, 1.2);
+  // 가로등 (가운데와 양쪽 길목) + 빛 번짐
+  for (const lx of [W * 0.27, W / 2, W * 0.73]) {
+    const lg = b.createRadialGradient(lx, 250, 10, lx, 330, 330); lg.addColorStop(0, 'rgba(255,214,120,.5)'); lg.addColorStop(1, 'rgba(255,214,120,0)');
+    b.fillStyle = lg; b.fillRect(lx - 400, 0, 800, GROUND);
+    b.strokeStyle = INK; b.lineWidth = 14; b.beginPath(); b.moveTo(lx, GROUND); b.lineTo(lx, 250); b.quadraticCurveTo(lx, 222, lx - 40, 222); b.stroke();
+    b.strokeStyle = '#5d6482'; b.lineWidth = 8; b.stroke(); box(lx - 66, 222, 50, 22, '#ffe08a', 8, 3.5);
+  }
   // 골목 바닥: 아스팔트
   const ag = b.createLinearGradient(0, GROUND, 0, H + 40); ag.addColorStop(0, '#3a3d58'); ag.addColorStop(1, '#23253b');
   b.fillStyle = ag; b.fillRect(-40, GROUND, W + 80, H + 80 - GROUND);
-  b.strokeStyle = 'rgba(0,0,0,.35)'; b.lineWidth = 2; for (let i = 0; i < 14; i++) { let x = rnd(0, W), y = rnd(GROUND + 6, 700); b.beginPath(); b.moveTo(x, y); for (let j = 0; j < 4; j++) { x += rnd(10, 36); y += rnd(-6, 6); b.lineTo(x, y); } b.stroke(); }
+  b.strokeStyle = 'rgba(0,0,0,.35)'; b.lineWidth = 2; for (let i = 0; i < 22; i++) { let x = rnd(0, W), y = rnd(GROUND + 6, 700); b.beginPath(); b.moveTo(x, y); for (let j = 0; j < 4; j++) { x += rnd(10, 36); y += rnd(-6, 6); b.lineTo(x, y); } b.stroke(); }
   b.fillStyle = '#e8c547'; for (let x = 20; x < W; x += 120) b.fillRect(x, 648, 64, 8);
   // 물웅덩이(가로등 반사)
-  for (const [x, y, rx] of [[420, 660, 70], [880, 672, 90], [1130, 650, 50], [1380, 668, 60]]) { b.fillStyle = 'rgba(20,24,52,.6)'; b.beginPath(); b.ellipse(x, y, rx, 9, 0, 0, TAU); b.fill(); b.fillStyle = 'rgba(255,214,120,.22)'; b.beginPath(); b.ellipse(x + 10, y, rx * 0.55, 4, 0, 0, TAU); b.fill(); }
+  for (const [x, y, rx] of [[420, 660, 70], [880, 672, 90], [1130, 650, 50], [1380, 668, 60], [1700, 664, 80], [1960, 670, 56]]) { b.fillStyle = 'rgba(20,24,52,.6)'; b.beginPath(); b.ellipse(x, y, rx, 9, 0, 0, TAU); b.fill(); b.fillStyle = 'rgba(255,214,120,.22)'; b.beginPath(); b.ellipse(x + 10, y, rx * 0.55, 4, 0, 0, TAU); b.fill(); }
   // 맨홀, 생선 가시, 연석
   b.fillStyle = '#2c2f48'; b.beginPath(); b.ellipse(W / 2, 668, 44, 9, 0, 0, TAU); b.fill(); b.lineWidth = 2.5; b.strokeStyle = INK; b.stroke();
   b.strokeStyle = '#e9eefb'; b.lineWidth = 2.4; b.lineCap = 'round'; b.beginPath(); b.moveTo(560, 640); b.lineTo(598, 640); for (let i = 0; i < 5; i++) { b.moveTo(568 + i * 7, 640); b.lineTo(566 + i * 7, 631); b.moveTo(568 + i * 7, 640); b.lineTo(566 + i * 7, 649); } b.stroke();
@@ -926,7 +928,7 @@ function buildBG(tone = 1) {
 /* ---------------- 게임 상태 ---------------- */
 let engine = null, G = null, bgTone = -1;
 function ensureBG() { const t = diff; if (t !== bgTone) { bgTone = t; buildBG(t); } }
-const cam = { x: W / 2, y: H / 2, zoom: 1, tx: W / 2, ty: H / 2, tz: 1, shake: 0 };
+const cam = { x: VW / 2, y: H / 2, zoom: 1, tx: VW / 2, ty: H / 2, tz: 1, shake: 0 };
 const parts = [], texts = [], shots = [], vfx = [];
 // 유닛별 타격 스타일: c1 주색 · c2 보조색 · s 모양. 공격이 처리되는 동안 HS 에 담겨 hitCat·slashFx·explode 가 읽는다.
 const HF = {
@@ -956,7 +958,7 @@ function newGame() {
   G.st = Object.assign({ boss: DIFFS[diff].boss || 0 }, AIP); G.aiMul = DIFFS[diff].inc; S[1].gold = AIP.gold;
   ensureBG();
   parts.length = 0; texts.length = 0; shots.length = 0; vfx.length = 0;
-  cam.x = cam.tx = W / 2; cam.y = cam.ty = H / 2; cam.zoom = cam.tz = 1; cam.shake = 0;
+  cam.x = cam.tx = VW / 2; cam.y = cam.ty = H / 2; cam.zoom = cam.tz = 1; cam.shake = 0;
   Events.on(engine, 'collisionStart', onCollide);
 }
 
@@ -1156,12 +1158,20 @@ function onCollide(e) {
 function spawnCat(team, k, free = false, noTwin = false) {
   const D = CATS[k], s = S[team];
   if (D.race !== s.race || s.baseLv < D.unlock || (!free && s.gold < D.cost) || G.cats.filter((u) => u.g.team === team).length >= RACES[s.race].max) return false;
+  // 한 줄 대형: 앞의 아군과 겹치지 않게, 맨 뒤 아군 바로 뒤에 선다. 자리가 없으면 소환하지 못한다(골드도 쓰지 않는다).
+  const sdir = team ? -1 : 1, allies = G.cats.filter((a) => a.g.team === team && !a.g.dead);
+  let x = team ? W - EDGE + 24 : EDGE - 24;
+  for (let it = 0; it < 40; it++) {
+    let hit = null;   // 겹치는 아군 중 가장 뒤에 있는 쪽 기준으로 그 뒤에 선다
+    for (const a of allies) if (Math.abs(a.position.x - x) < (D.w + a.g.w) * 0.45 && (!hit || (a.position.x - hit.position.x) * sdir < 0)) hit = a;
+    if (!hit) break; x = hit.position.x - sdir * (D.w + hit.g.w) * 0.45;
+  }
+  if (x < -150 || x > W + 150) return false;
   if (!free) s.gold -= D.cost;
-  const x = (team ? W - EDGE + 24 : EDGE - 24) + rnd(-8, 8);
   const b = Bodies.rectangle(x, GROUND - D.h / 2 - 1, D.w * 0.8, D.h, { density: 0.002, friction: 0.05, frictionAir: 0.02, restitution: 0, collisionFilter: { category: CATC.unit, mask: CATC.ground } });
   Body.setInertia(b, Infinity);
   mkBody(b, { kind: 'cat', k, team, coat: (Math.random() * 3) | 0, hp: D.hp * hpMul(team), max: D.hp * hpMul(team), sh: (D.sh || 0) * hpMul(team), shMax: (D.sh || 0) * hpMul(team), noHit: 0, hid: !!D.stealth, guardT: 0, guardMul: 1, armorT: 0, chillT: 0, tauntT: 0, auT: 0, boostT: 0, cd: D.cd * 0.5, face: team ? -1 : 1, anim: rnd(0, 6), hurt: 0, atk: 0, moving: false, stun: 0, spin: 0,
-    lane: rnd(-14, 14), jit: rnd(-6, 6), first: true, w: D.w, h: D.h, dead: false });
+    lane: 0, jit: rnd(-6, 6), first: true, w: D.w, h: D.h, dead: false });
   Composite.add(engine.world, b); G.cats.push(b);
   fx('dust', x, GROUND - 4, 3);
   if (team === 0) { sfx('spawn'); meow(D.a, 0.12); }
@@ -1571,10 +1581,25 @@ function updateCat(u, ts) {
     if (far && far !== best) { fx('dust', u.position.x, GROUND - 4, 6); Body.setPosition(u, { x: far.position.x - dir * 26, y: u.position.y }); Body.setVelocity(u, { x: 0, y: -8 }); fx('dust', far.position.x, GROUND - 4, 6); return; }
   }
   let limP = W - 2 * EDGE - D.w * 0.35;      // 항상 앞으로
+  g.eng = engaged; g.swapT = Math.max(0, (g.swapT || 0) - ts);
+  // 한 줄 대형: 바로 앞 아군과 겹치지 않는다. 앞이 막혔으면 멈추고, 겹쳤으면 살짝 물러난다.
+  let blocker = null, bgap = 1e9;
+  if (!(g.hid && D.tunnel)) for (const a of G.cats) {
+    if (a === u || a.g.team !== g.team || a.g.dead || (a.g.hid && CATS[a.g.k].tunnel)) continue;
+    const d = (a.position.x - u.position.x) * dir;
+    if ((d > 0 || (d === 0 && a.id < u.id)) && d < bgap) { bgap = d; blocker = a; }
+  }
+  const need = blocker ? (D.w + blocker.g.w) * 0.45 : 0, blocked = !!blocker && bgap < need + 3, tooClose = !!blocker && bgap < need * 0.8;
+  if (blocked && !D.ranged && CATS[blocker.g.k].ranged && blocker.g.eng && !(g.swapT > 0) && !(blocker.g.swapT > 0)) {   // 멈춰 쏘는 원거리 앞을 근접이 뚫고 나간다(자리 맞바꿈)
+    const ax = blocker.position.x, ux2 = u.position.x;
+    Body.setPosition(u, { x: ax, y: u.position.y }); Body.setPosition(blocker, { x: ux2, y: blocker.position.y });
+    g.swapT = blocker.g.swapT = 50; fx('dust', ax, GROUND - 4, 3); fx('dust', ux2, GROUND - 4, 3); return;
+  }
   if (engaged) {
     Body.setVelocity(u, { x: 0, y: u.velocity.y }); g.moving = false;
     if (g.cd <= 0) { if (D.ranged) castOrb(u, tgt); else swing(u, tgt); }
-  } else if (myP < limP - 4) { Body.setVelocity(u, { x: dir * spd, y: u.velocity.y }); g.moving = true; g.anim += 0.3 * ts; }
+  } else if (blocked) { Body.setVelocity(u, { x: tooClose ? -dir * 0.7 : 0, y: u.velocity.y }); g.moving = tooClose; if (tooClose) g.anim += 0.2 * ts; }
+  else if (myP < limP - 4) { Body.setVelocity(u, { x: dir * spd, y: u.velocity.y }); g.moving = true; g.anim += 0.3 * ts; }
   else if (myP > limP + 8) { Body.setVelocity(u, { x: -dir * spd, y: u.velocity.y }); g.moving = true; g.anim += 0.3 * ts; }
   else { Body.setVelocity(u, { x: 0, y: u.velocity.y }); g.moving = false; }
 }
@@ -1664,7 +1689,7 @@ function step() {
   for (const b of Composite.allBodies(engine.world)) {
     const g = b.g; if (!g) continue;
     if (g.life !== undefined && (g.kind !== 'can' || g.hit)) g.life--;
-    if (g.life !== undefined && (g.life <= 0 || b.position.y > H + 400 || Math.abs(b.position.x - W / 2) > 1400)) Composite.remove(engine.world, b);
+    if (g.life !== undefined && (g.life <= 0 || b.position.y > H + 400 || Math.abs(b.position.x - W / 2) > W / 2 + 700)) Composite.remove(engine.world, b);
   }
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i]; p.x += p.vx * ts; p.y += p.vy * ts; p.vy += 0.22 * ts; p.rot += p.vr * ts; p.life -= ts;
@@ -1676,9 +1701,17 @@ function step() {
   cam.shake *= 0.9;
   if (G.state === 'over') {
     const lx = G.winner === 0 ? W - BASE_CX : BASE_CX; cam.tz = 1.5;
-    cam.tx = clamp(lx, W / 2 / cam.tz, W - W / 2 / cam.tz); cam.ty = clamp(GROUND - 90, H / 2 / cam.tz, H - H / 2 / cam.tz);
-  } else { cam.tz = 1; cam.tx = W / 2; cam.ty = H / 2; }
-  cam.zoom += (cam.tz - cam.zoom) * 0.06; cam.x += (cam.tx - cam.x) * 0.06; cam.y += (cam.ty - cam.y) * 0.06;
+    cam.tx = clamp(lx, VW / 2 / cam.tz, W - VW / 2 / cam.tz); cam.ty = clamp(GROUND - 90, H / 2 / cam.tz, H - H / 2 / cam.tz);
+  } else {   // 전선을 따라간다: 우리 선두와 적 선두의 가운데. 한쪽만 있으면 그쪽 앞을 본다. 화살표 키로 직접 밀어 볼 수 있다.
+    const mine = G.cats.filter((u) => u.g.team === 0 && !u.g.dead), foes = G.cats.filter((u) => u.g.team === 1 && !u.g.dead);
+    const mf = mine.length ? Math.max(...mine.map((u) => u.position.x)) : null, ef = foes.length ? Math.min(...foes.map((u) => u.position.x)) : null;
+    let focus = VW / 2;
+    if (mf !== null && ef !== null) focus = ef - mf < VW * 0.75 ? (mf + ef) / 2 : mf + VW * 0.28;   // 멀리 떨어져 있으면 아군 선두를 따라가고, 맞붙으면 두 선두의 가운데
+    else if (mf !== null) focus = mf + 200; else if (ef !== null) focus = ef - 200;
+    if (G.camManual > 0) { G.camManual -= 1; focus = G.camFocus; } else G.camFocus = focus;
+    cam.tz = 1; cam.tx = clamp(focus, VW / 2, W - VW / 2); cam.ty = H / 2;
+  }
+  cam.zoom += (cam.tz - cam.zoom) * 0.06; cam.x += (cam.tx - cam.x) * (G.state === 'over' ? 0.06 : 0.08); cam.y += (cam.ty - cam.y) * 0.06;
 }
 
 function endGame(winner) {
@@ -1775,11 +1808,24 @@ function drawCan(b) {
   rr(-60, -43, 120, 10, 6); fs('#e8edf7', 3); circ(0, -38, 5); fs('#aeb6c8', 2); c.restore();
 }
 
+function drawMinimap() {   // 맵이 화면보다 넓어서: 위쪽 가운데에 전체 지도(본진 체력·유닛 위치·지금 보는 구간)
+  const mw = 520, mh = 16, x0 = (VW - mw) / 2, y0 = 54, sx = (x) => x0 + clamp(x / W, 0, 1) * mw;
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 0.92;
+  c.beginPath(); c.roundRect(x0 - 8, y0 - 6, mw + 16, mh + 12, 10); c.fillStyle = 'rgba(14,18,40,.72)'; c.fill(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+  c.fillStyle = 'rgba(255,255,255,.16)'; c.fillRect(x0, y0 + mh / 2 - 1, mw, 2);
+  for (const t of [0, 1]) {
+    const hp = clamp(S[t].hp / maxHp(t, S[t].baseLv), 0, 1), bw = 40; c.fillStyle = t ? '#ff6a6a' : '#6ab0ff';
+    c.fillRect(t ? x0 + mw - bw : x0, y0 + mh / 2 + 3, bw * hp, 3); c.fillRect(t ? x0 + mw - 6 : x0, y0 - 1, 6, mh + 2);
+  }
+  for (const u of G.cats) if (!u.g.dead) { c.fillStyle = u.g.team ? '#ff8a8a' : '#8fd0ff'; c.beginPath(); c.arc(sx(u.position.x), y0 + mh / 2 + (u.g.team ? 2 : -2), 2.4, 0, TAU); c.fill(); }
+  c.lineWidth = 1.6; c.strokeStyle = '#fff'; c.strokeRect(sx(cam.x - VW / 2), y0 - 2, (VW / W) * mw, mh + 4);
+  c.restore();
+}
 function render() {
   G.fr = (G.fr || 0) + 1;
-  c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, W, H);
+  c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, VW, H);
   const sx = rnd(-1, 1) * cam.shake, sy = rnd(-1, 1) * cam.shake;
-  c.translate(W / 2 + sx, H / 2 + sy); c.scale(cam.zoom, cam.zoom); c.translate(-cam.x, -cam.y);
+  c.translate(VW / 2 + sx, H / 2 + sy); c.scale(cam.zoom, cam.zoom); c.translate(-cam.x, -cam.y);
   c.drawImage(BG, -40, -40);
   for (const t of [0, 1]) if (!G.deadBase[t]) drawBase(t);
   const bodies = Composite.allBodies(engine.world), by = { chip: [], piece: [], cat: [], can: [] };
@@ -1827,6 +1873,7 @@ function render() {
     c.font = `${t.size}px Jua, sans-serif`; c.textAlign = 'center'; c.lineJoin = 'round'; c.lineWidth = 7; c.strokeStyle = INK; c.strokeText(t.str, 0, 0); c.fillStyle = t.color; c.fillText(t.str, 0, 0); c.restore();
   }
   c.setTransform(1, 0, 0, 1, 0, 0);
+  drawMinimap();
 }
 
 /* ---------------- 화면 · 조작 ---------------- */
@@ -1960,9 +2007,11 @@ function setMute(v) { muted = v; if (master) master.gain.value = v ? 0 : 0.5; $(
 $('bMute').addEventListener('click', () => { audio(); setMute(!muted); });
 const HOT = { b: 'base', g: 'eco', h: 'spd', j: 'atk', k: 'def' };
 addEventListener('keydown', (e) => {
-  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.repeat && !e.key.startsWith('Arrow')) return;
   if (patchOpen) { if (e.key === 'Escape') setPatch(false); return; }
   const k = e.key.toLowerCase();
+  if ((k === 'arrowleft' || k === 'arrowright') && G && G.state === 'play') { e.preventDefault(); G.camFocus = clamp((G.camFocus ?? cam.x) + (k === 'arrowleft' ? -260 : 260), VW / 2, W - VW / 2); G.camManual = 150; return; }
   if (k >= '1' && k <= '9') { audio(); trySpawn(S[0].race * 9 + +k - 1); }
   else if (k === ' ' && G.state === 'play') { e.preventDefault(); audio(); useSpecial(0); }
   else if (HOT[k]) { audio(); tryBuy(HOT[k]); }
