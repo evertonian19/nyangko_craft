@@ -928,6 +928,20 @@ let engine = null, G = null, bgTone = -1;
 function ensureBG() { const t = diff; if (t !== bgTone) { bgTone = t; buildBG(t); } }
 const cam = { x: W / 2, y: H / 2, zoom: 1, tx: W / 2, ty: H / 2, tz: 1, shake: 0 };
 const parts = [], texts = [], shots = [], vfx = [];
+// 유닛별 타격 스타일: c1 주색 · c2 보조색 · s 모양. 공격이 처리되는 동안 HS 에 담겨 hitCat·slashFx·explode 가 읽는다.
+const HF = {
+  0: { c1: '#fff6e0', c2: '#ffb347', s: 'claw3' }, 1: { c1: '#b58bff', c2: '#ff9bd0', s: 'xcut' }, 2: { c1: '#9be37a', c2: '#e6ffd0', s: 'arrow' },
+  3: { c1: '#ffb347', c2: '#ffe0a0', s: 'shock' }, 4: { c1: '#c9a5ff', c2: '#ffffff', s: 'rune' }, 5: { c1: '#ffd84a', c2: '#fff6c8', s: 'sword' },
+  6: { c1: '#ff3b3b', c2: '#ff9b9b', s: 'rend' }, 7: { c1: '#ffe27a', c2: '#ffffff', s: 'speed' }, 8: { c1: '#ff3b3b', c2: '#7a1040', s: 'dark' },
+  9: { c1: '#ffc27a', c2: '#ffffff', s: 'claw3' }, 10: { c1: '#e0b36a', c2: '#fff3c0', s: 'shock' }, 11: { c1: '#8fd8ff', c2: '#ffffff', s: 'sonic' },
+  12: { c1: '#7dff9b', c2: '#ffffff', s: 'heal' }, 13: { c1: '#cfd6e8', c2: '#8a93a6', s: 'shock' }, 14: { c1: '#9ec9ff', c2: '#e6f3ff', s: 'frost' },
+  15: { c1: '#cfe4ff', c2: '#9ec9ff', s: 'frost' }, 16: { c1: '#8a6bff', c2: '#cfc0ff', s: 'speed' }, 17: { c1: '#9ec9ff', c2: '#ffffff', s: 'sword' },
+  18: { c1: '#9be37a', c2: '#e6ffb0', s: 'jaws' }, 19: { c1: '#b6ff4d', c2: '#5fd23a', s: 'acid' }, 20: { c1: '#ffb347', c2: '#ff6a3a', s: 'boom' },
+  21: { c1: '#6bd5a9', c2: '#d4fff0', s: 'shock' }, 22: { c1: '#7dd8c0', c2: '#ffffff', s: 'mist' }, 23: { c1: '#ff4a4a', c2: '#ffb0b0', s: 'gaze' },
+  24: { c1: '#d8a0ff', c2: '#b4ff5a', s: 'poison' }, 25: { c1: '#c8a0ff', c2: '#6a2a9a', s: 'jaws' }, 26: { c1: '#ff8a3a', c2: '#ffd84a', s: 'fire' },
+};
+let HS = null;
+const withHS = (k, fn) => { const p = HS; HS = HF[k] || null; try { return fn(); } finally { HS = p; } };
 let slowManual = false;
 const mkBody = (body, g) => { body.g = g; return body; };
 
@@ -969,14 +983,15 @@ function hitCat(t, dmg, dir, crit, src) {
   const tot = d; g.noHit = 180;
   if (g.sh > 0) { const ab = Math.min(g.sh, d); g.sh -= ab; d -= ab; addV('ring', t.position.x, t.position.y - 8, { life: 10, size: 34, color: '#9ec9ff' }); }
   g.hp -= d; g.hurt = 12; g.squash = 8;
-  dmgNum(t, tot, crit); addV('ring', t.position.x, t.position.y - 8, { life: 12, size: 26, color: '#fff' });
-  addV('flash', t.position.x, t.position.y - 8, { life: 9, size: crit ? 56 : 38, color: crit ? '#ff9b8a' : '#fff6c8' });
-  fx('spark', t.position.x, t.position.y - 8, crit ? 10 : 4, dir, crit ? '#ff6a4d' : '#ffd84a');
+  dmgNum(t, tot, crit); const hc1 = HS ? HS.c1 : '#fff6c8', hc2 = HS ? HS.c2 : '#ffd84a';   // 공격한 유닛의 색으로 타격 연출
+  addV('ring', t.position.x, t.position.y - 8, { life: 12, size: 26, color: HS ? hc1 : '#fff' });
+  addV('flash', t.position.x, t.position.y - 8, { life: 9, size: crit ? 56 : 38, color: crit ? '#ff9b8a' : hc1 });
+  fx('spark', t.position.x, t.position.y - 8, crit ? 10 : 4, dir, crit ? '#ff6a4d' : hc2);
   if (crit) { pop(t.position.x, t.position.y - 44, '치명타!', '#ff8a8a', 34); G.slowT = Math.max(G.slowT, 4); }
   if (TD.reflect && src && src !== t && !src.g.dead) { hitCat(src, tot * TD.reflect, -dir); fx('spark', src.position.x, src.position.y - 8, 3, -dir, '#c8ff7a'); }
   if (g.hp <= 0) killCat(t, dir);
 }
-function kickCat(b, vx, vy, stun) { if (b.g.dead || CATS[b.g.k].noKick) return; b.g.stun = stun; Body.setVelocity(b, { x: vx, y: vy }); }
+function kickCat() { /* 넉백 없음: 맞아도 밀리거나 뜨거나 멈추지 않는다. 기절·얼림은 스킬 쪽에서 g.stun 으로 직접 건다. */ }
 function dmgBase(team, dmg) {
   const s = S[team]; if (G.state !== 'play' || s.inv > 0) return;
   dmg *= 1 + Math.max(0, G.t - 120) / 35;       // 오래 끌수록 본진이 약해진다(교착 방지)
@@ -1031,9 +1046,11 @@ function killCat(u, dir, force) {
 
 /* ---------------- 폭발 · 마법 · 필살기 ---------------- */
 function explode(x, y, team, dmg, rad, knock = 1, magic = false) {
-  fx('star', x, y, 6); fx('dust', x, y + 10, 8); fx('spark', x, y, 8, 0, magic ? '#d6b8ff' : '#ffd84a');
-  addV('ring', x, y, { life: 22, size: rad * 1.1, color: magic ? '#c9a5ff' : '#ffcf5a' }); addV('ring', x, y, { life: 14, size: rad * 0.7, color: '#fff' });
-  if (magic) addV('rune', x, GROUND + 4, { life: 34, size: rad * 1.05 });
+  const eh = HS, ec1 = eh ? eh.c1 : (magic ? '#c9a5ff' : '#ffcf5a'), ec2 = eh ? eh.c2 : '#fff';
+  fx('star', x, y, 6); fx('dust', x, y + 10, 8); fx('spark', x, y, 8, 0, eh ? ec1 : (magic ? '#d6b8ff' : '#ffd84a'));
+  addV('ring', x, y, { life: 22, size: rad * 1.1, color: ec1 }); addV('ring', x, y, { life: 14, size: rad * 0.7, color: eh ? ec2 : '#fff' });
+  if (magic && (!eh || eh.s === 'rune')) addV('rune', x, GROUND + 4, { life: 34, size: rad * 1.05 });
+  else if (eh && SHAPES[eh.s]) SHAPES[eh.s](x, y, 1, false, eh);
   cam.shake = Math.max(cam.shake, magic ? 7 : 10); sfx(magic ? 'zap' : 'boom2');
   for (const e of G.cats.slice()) {
     if (e.g.team === team || e.g.dead) continue;
@@ -1041,7 +1058,6 @@ function explode(x, y, team, dmg, rad, knock = 1, magic = false) {
     if (d < rad) {
       const sgn = Math.sign(e.position.x - x) || 1;
       hitCat(e, dmg * (1 - d / rad * 0.5), sgn);
-      if (!e.g.dead) kickCat(e, sgn * rnd(2, 5) * knock, -rnd(6, 11) * knock, 28);
     }
   }
   const eb = 1 - team, cx = eb ? W - BASE_CX : BASE_CX;
@@ -1052,7 +1068,7 @@ function castOrb(u, tgt) {
   g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1) * (g.frenzyT > 0 ? 0.5 : g.howlT > 0 ? 0.7 : 1); g.atk = ATK_T;
   const edgeEn = g.team ? EDGE : W - EDGE, x0 = u.position.x + g.face * 16, y0 = u.position.y - (arrow ? 6 : 30);
   shots.push({ kind: arrow ? 'arrow' : 'orb', base: !!tgt.base, x0, y0, x1: tgt.base ? edgeEn : tgt.body.position.x, y1: tgt.base ? GROUND - (arrow ? 36 : 40) : tgt.body.position.y - (arrow ? 4 : 0),
-    t: arrow ? -5 : -14, dur: arrow ? 24 : 34, team: g.team, dmg: D.atk * (1 + 0.15 * s.up.atk) * (g.packT > 0 ? 1.15 : 1), tb: tgt.base ? null : tgt.body, x: x0, y: y0, col: D.shotCol, fxk: D.shotFx, rad: D.shotRad });
+    t: arrow ? -5 : -14, dur: arrow ? 24 : 34, team: g.team, dmg: D.atk * (1 + 0.15 * s.up.atk) * (g.packT > 0 ? 1.15 : 1), tb: tgt.base ? null : tgt.body, x: x0, y: y0, col: D.shotCol, fxk: D.shotFx, hk: g.k, rad: D.shotRad });
   if (!arrow) addV('charge', u.position.x + g.face * 18, u.position.y - 26, { life: 16, size: 26 });
   sfx('shoot');
   if (rollSkill(g)) skillRanged(u, tgt, D.atk * (1 + 0.15 * s.up.atk) * (g.packT > 0 ? 1.15 : 1));
@@ -1178,7 +1194,30 @@ function dmgNum(t, d, crit) {
   if (ex) { ex.val += d; ex.str = String(Math.round(ex.val)); ex.size = Math.min(46, ex.size + 2); return; }
   addV('num', t.position.x + rnd(-8, 8), t.position.y - 34 - 8 * CATS[g.k].sc, { life: 44, vy: -1.5, val: d, str: String(Math.round(d)), size: crit ? 42 : 26, color: crit ? '#ff6a4d' : g.team === 0 ? '#ff9b9b' : '#ffe27a', tgt: t });
 }
+// 모양별 타격 연출. 색 + 모양 + 움직임이 달라 누구의 공격인지 멀리서도 구분된다.
+const SHAPES = {
+  claw3(x, y, fc, crit, h) { addV('claw', x, y, { dir: fc, life: 16, col2: h.c2 }); addV('rays', x, y, { life: 12, size: 40, n: 5, color: h.c1 }); fx('star', x, y, 2); },
+  xcut(x, y, fc, crit, h) { addV('xslash', x, y, { dir: fc, life: 16, color: crit ? '#ff3b3b' : h.c1 }); addV('xslash', x, y, { dir: -fc, life: 20, color: h.c2 }); fx('spark', x, y, crit ? 10 : 5, fc, h.c1); if (crit) { G.slowT = Math.max(G.slowT, 12); cam.shake = Math.max(cam.shake, 6); } },
+  arrow(x, y, fc, crit, h) { addV('rays', x, y, { life: 12, size: 36, n: 6, color: h.c1 }); fx('chip', x, y, 5, fc, '#6bbf4a'); fx('spark', x, y, 4, fc, h.c2); },
+  shock(x, y, fc, crit, h) { addV('ring', x, y + 10, { life: 16, size: 80, color: h.c1, sq: 0.45 }); addV('ring', x, y + 10, { life: 11, size: 50, color: h.c2, sq: 0.45 }); addV('wave', x, y, { dir: fc, life: 18, size: 46 }); fx('chip', x, y + 8, 4, fc, h.c1); fx('dust', x, y + 14, 5, fc); },
+  rune(x, y, fc, crit, h) { addV('ring', x, y, { life: 16, size: 64, color: h.c1 }); addV('rays', x, y, { life: 14, size: 56, n: 8, color: h.c1, rot: 0.4 }); fx('spark', x, y, 8, 0, h.c2); },
+  sword(x, y, fc, crit, h) { addV('crescent', x, y, { dir: fc, life: 16, size: 64, color: h.c1 }); addV('rays', x, y, { life: 12, size: 50, n: 6, color: h.c2 }); fx('spark', x, y, 8, fc, h.c1); },
+  rend(x, y, fc, crit, h) { addV('claw', x, y, { dir: fc, life: 16, col2: h.c1 }); fx('chip', x, y, 7, fc, '#c0262d'); fx('spark', x, y, 6, fc, h.c1); addV('streak', x, y, { life: 12, ang: -0.6 * fc, size: 70, color: h.c2, dir: fc }); },
+  speed(x, y, fc, crit, h) { addV('dashline', x - fc * 20, y, { dir: fc, life: 14, size: 90, c: h.c1 }); addV('streak', x, y, { life: 12, ang: 0, size: 80, color: h.c2, dir: fc }); fx('dust', x, y + 14, 4, fc); fx('spark', x, y, 8, fc, h.c1); if (crit) { G.slowT = Math.max(G.slowT, 8); cam.shake = Math.max(cam.shake, 8); } },
+  dark(x, y, fc, crit, h) { addV('ring', x, y, { life: 20, size: 90, color: h.c1 }); addV('ring', x, y, { life: 14, size: 54, color: h.c2 }); addV('rays', x, y, { life: 16, size: 70, n: 8, color: h.c1 }); fx('spark', x, y, 8, fc, h.c1); cam.shake = Math.max(cam.shake, 6); },
+  sonic(x, y, fc, crit, h) { for (let i = 0; i < 3; i++) addV('ring', x, y, { life: 12 + i * 4, size: 30 + i * 20, color: i ? h.c1 : '#fff' }); },
+  heal(x, y, fc, crit, h) { addV('cross', x, y, { life: 22, size: 26, color: h.c1 }); fx('spark', x, y, 4, 0, h.c1); },
+  frost(x, y, fc, crit, h) { addV('claw', x, y, { dir: fc, life: 16, col2: h.c2 }); addV('rays', x, y, { life: 16, size: 46, n: 6, color: h.c2 }); fx('spark', x, y, 6, fc, h.c1); fx('star', x, y, 2); },
+  jaws(x, y, fc, crit, h) { addV('jaws', x, y, { life: 16, size: 1, color: h.c1 }); fx('spark', x, y, 4, fc, h.c2); },
+  acid(x, y, fc, crit, h) { addV('ring', x, y + 6, { life: 14, size: 44, color: h.c2, sq: 0.5 }); fx('chip', x, y, 7, fc, h.c1); fx('dust', x, y + 12, 3, fc); },
+  boom(x, y, fc, crit, h) { addV('ring', x, y, { life: 16, size: 60, color: h.c1 }); addV('rays', x, y, { life: 14, size: 56, n: 8, color: h.c2 }); fx('chip', x, y, 5, fc, h.c2); },
+  mist(x, y, fc, crit, h) { addV('flash', x, y, { life: 14, size: 52, color: h.c1 }); addV('xslash', x, y, { dir: fc, life: 14, color: h.c1 }); fx('dust', x, y, 6, fc); },
+  gaze(x, y, fc, crit, h) { addV('streak', x, y, { life: 14, ang: 0, size: 90, color: h.c1, dir: fc }); addV('rays', x, y, { life: 12, size: 44, n: 4, color: h.c1 }); fx('spark', x, y, 6, fc, h.c2); },
+  poison(x, y, fc, crit, h) { addV('ring', x, y, { life: 18, size: 58, color: h.c1 }); addV('flash', x, y, { life: 14, size: 44, color: h.c1 }); fx('chip', x, y, 6, fc, h.c2); },
+  fire(x, y, fc, crit, h) { addV('rays', x, y, { life: 14, size: 56, n: 7, color: h.c1 }); addV('ring', x, y, { life: 14, size: 46, color: h.c2 }); fx('spark', x, y, 8, 0, h.c2); fx('spark', x, y, 5, 0, h.c1); },
+};
 function slashFx(name, x, y, fc, crit) {
+  if (HS && SHAPES[HS.s]) { SHAPES[HS.s](x, y, fc, crit, HS); return; }
   addV('ring', x, y, { life: 14, size: 44, color: '#fff' }); addV('flash', x, y, { life: 8, size: crit ? 64 : 44, color: '#fff6c8' }); fx('spark', x, y, crit ? 8 : 4, fc, '#ffe27a');
   if (name === 'claw') { addV('claw', x, y, { dir: fc, life: 16 }); fx('star', x, y, 2); }
   else if (name === 'claw2') { addV('claw', x, y, { dir: fc, life: 16, col2: '#ff5a4b' }); fx('spark', x, y, 6, fc, '#ff3b3b'); }
@@ -1193,7 +1232,7 @@ function slashFx(name, x, y, fc, crit) {
 }
 function bigSlash(u) {
   const g = u.g, D = CATS[g.k], fc = g.face, y = u.position.y + D.h / 2 - FOOT * D.sc + g.lane;
-  addV('crescent', u.position.x + fc * 30, y - 20, { dir: fc, life: 20, size: D.a === 8 ? 120 : 84 });
+  addV('crescent', u.position.x + fc * 30, y - 20, { dir: fc, life: 20, size: D.a === 8 ? 120 : 84, color: HS ? HS.c1 : '#fff' });
   const gx = u.position.x + fc * 70, pts = []; for (let i = -5; i <= 5; i++) pts.push([i * 15 + rnd(-3, 3), i % 2 ? rnd(2, 8) : rnd(-2, 3)]);
   addV('crack', gx, GROUND + 2, { life: 40, pts }); fx('dust', gx, GROUND, 6, fc); fx('spark', gx, GROUND - 6, 8, fc, '#ffd84a');
   cam.shake = Math.max(cam.shake, D.a === 8 ? 16 : 12); G.slowT = Math.max(G.slowT, 8); sfx('heavy');
@@ -1202,7 +1241,7 @@ function roar(u) {
   const g = u.g;
   addV('ring', u.position.x, u.position.y - 20, { life: 26, size: 230, color: '#ffcf5a' }); addV('ring', u.position.x, u.position.y - 20, { life: 18, size: 150, color: '#fff' });
   pop(u.position.x, u.position.y - 100, '크아아앙!!', '#ffcf5a', 52); cam.shake = Math.max(cam.shake, 18); sfx('heavy');
-  for (const e of G.cats) if (e.g.team !== g.team && !e.g.dead && Math.abs(e.position.x - u.position.x) < 220) { e.g.stun = 55; Body.setVelocity(e, { x: g.face * 1.5, y: -5 }); }
+  for (const e of G.cats) if (e.g.team !== g.team && !e.g.dead && Math.abs(e.position.x - u.position.x) < 220) { e.g.stun = 55; }
 }
 function drawVfx() {
   for (const v of vfx) {
@@ -1240,6 +1279,19 @@ function drawVfx() {
       const r = v.size * (1 - k) + 5; circ(0, 0, r); c.lineWidth = 3; c.strokeStyle = '#d6b8ff'; c.stroke();
       for (let i = 0; i < 5; i++) { const a = k * 9 + i * TAU / 5; circ(Math.cos(a) * r * 1.6, Math.sin(a) * r * 1.6, 3); c.fillStyle = '#fff'; c.fill(); }
       circ(0, 0, 4 + k * 6); c.fillStyle = '#b58bff'; c.fill();
+    } else if (t === 'rays') {
+      const n = v.n || 6, r0 = v.size * 0.22 * (0.4 + k), r1 = v.size * (0.45 + k * 0.7);
+      for (let i = 0; i < n; i++) { const a = i * TAU / n + (v.rot || 0) + k * 0.4; line(Math.cos(a) * r0, Math.sin(a) * r0, Math.cos(a) * r1, Math.sin(a) * r1, 7 * (1 - k) + 2, INK); line(Math.cos(a) * r0, Math.sin(a) * r0, Math.cos(a) * r1, Math.sin(a) * r1, 4 * (1 - k) + 1, v.color); }
+    } else if (t === 'streak') {
+      c.rotate(v.ang || 0); const p = clamp(k * 3, 0, 1), L = v.size, x0 = -L / 2 * v.dir, x1 = x0 + L * v.dir * p;
+      line(x0, 0, x1, 0, 11 * (1 - k) + 3, INK); line(x0, 0, x1, 0, 6 * (1 - k) + 1.5, v.color);
+    } else if (t === 'cross') {
+      c.translate(0, -k * 34); const a = v.size * (1 + k * 0.4);
+      for (const [w, col] of [[15, INK], [9, v.color]]) { line(-a, 0, a, 0, w, col); line(0, -a, 0, a, w, col); }
+    } else if (t === 'jaws') {
+      const gap = (1 - clamp(k * 3, 0, 1)) * 24 + 2;
+      for (const sg of [-1, 1]) for (let i = 0; i < 4; i++) { const tx = -21 + i * 14; tri(tx, sg * (gap + 2), tx + 7, sg * (gap - 13), tx + 14, sg * (gap + 2)); c.fillStyle = '#fff'; c.fill(); c.lineWidth = 2.4; c.strokeStyle = INK; c.stroke(); }
+      for (const sg of [-1, 1]) line(-24, sg * (gap + 3), 28, sg * (gap + 3), 4, v.color);
     } else if (t === 'flash') {
       const r = v.size * (0.35 + k * 0.75); c.globalAlpha *= 0.8; circ(0, 0, r); c.fillStyle = v.color; c.fill(); c.globalAlpha = clamp(v.life / v.max * 1.8, 0, 1); circ(0, 0, r * 0.5); c.fillStyle = '#fff'; c.fill();
       for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + k * 0.6, l = r * (1.2 + k); line(Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.5, Math.cos(a) * l, Math.sin(a) * l, 2.5 * (1 - k) + 1, '#fff'); }
@@ -1267,7 +1319,7 @@ function drawVfx() {
   }
 }
 /* ---------------- 패시브 스킬 ---------------- */
-const later = (fr, fn) => G.hitQ.push({ t: fr, fn });
+const later = (fr, fn) => G.hitQ.push({ t: fr, fn, hs: HS });
 const foesOf = (g) => G.cats.filter((e) => e.g.team !== g.team && !e.g.dead);
 function rollSkill(g) { return G.state === 'play' && (G.force || Math.random() < CATS[g.k].sp); }
 function skillFx(u, big) {
@@ -1281,7 +1333,8 @@ function skillFx(u, big) {
   sfx(D.unlock >= 3 ? 'heavy' : 'zap');
 }
 function hitFoe(e, dmg, fc, crit) { if (e.g.dead) return; hitCat(e, dmg, fc, crit); if (!e.g.dead) kickCat(e, fc * 2.5, -3.5, 12); }
-function skillMelee(u, tg, dmg) {   // 근접 유닛 스킬
+function skillMelee(u, tg, dmg) { return withHS(u.g.k, () => skillMelee0(u, tg, dmg)); }
+function skillMelee0(u, tg, dmg) {   // 근접 유닛 스킬
   const g = u.g, D = CATS[g.k], fc = g.face, tb = tg.base ? null : tg.body, ux = u.position.x, uy = u.position.y - 6, tx = tb ? tb.position.x : (g.team ? EDGE : W - EDGE), ty = tb ? tb.position.y - 8 : GROUND - 40;
   const team = g.team, foes = () => foesOf(g), hitT = (m, crit) => { if (tb && !tb.g.dead) hitFoe(tb, dmg * m, fc, crit); else if (tg.base) dmgBase(1 - team, dmg * m); };
   skillFx(u, true);
@@ -1397,7 +1450,8 @@ function skillMelee(u, tg, dmg) {   // 근접 유닛 스킬
     }
   }
 }
-function skillRanged(u, tg, dmg) {   // 원거리 유닛 스킬 (궁수: 화살비, 마법사: 연쇄 번개)
+function skillRanged(u, tg, dmg) { return withHS(u.g.k, () => skillRanged0(u, tg, dmg)); }
+function skillRanged0(u, tg, dmg) {   // 원거리 유닛 스킬 (궁수: 화살비, 마법사: 연쇄 번개)
   const g = u.g, fc = g.face, team = g.team, tb = tg.base ? null : tg.body, tx = tb ? tb.position.x : (team ? EDGE : W - EDGE);
   skillFx(u, true);
   if (g.k === 2) {
@@ -1426,7 +1480,8 @@ function skillRanged(u, tg, dmg) {   // 원거리 유닛 스킬 (궁수: 화살�
     }
   }
 }
-function swing(u, tg) {
+function swing(u, tg) { return withHS(u.g.k, () => swing0(u, tg)); }
+function swing0(u, tg) {
   const g = u.g, D = CATS[g.k], s = sideOf(u), fc = g.face;
   g.cd = D.cd * (1 - 0.1 * s.up.spd) * rnd(0.9, 1.1) * (g.frenzyT > 0 ? 0.5 : g.howlT > 0 ? 0.7 : 1); g.atk = ATK_T;
   let dmg = D.atk * (1 + 0.15 * s.up.atk) * (g.packT > 0 ? 1.15 : 1), crit = false;
@@ -1574,7 +1629,7 @@ function step() {
     G.special = Math.min(1, G.special + ts / (60 * 24)); G.special1 = Math.min(1, G.special1 + ts / (60 * 24));
     for (const k in G.cd) G.cd[k] = Math.max(0, G.cd[k] - ts);
     aiThink(ts); G.skT = Math.max(0, G.skT - ts);
-    if (G.hitQ.length) { const due = []; G.hitQ = G.hitQ.filter((q) => { q.t -= ts; if (q.t <= 0) { due.push(q); return false; } return true; }); for (const q of due) if (G.state === 'play') q.fn(); }
+    if (G.hitQ.length) { const due = []; G.hitQ = G.hitQ.filter((q) => { q.t -= ts; if (q.t <= 0) { due.push(q); return false; } return true; }); for (const q of due) if (G.state === 'play') { const pv = HS; HS = q.hs || null; try { q.fn(); } finally { HS = pv; } } }
     for (const u of G.cats.slice()) if (!u.g.dead) updateCat(u, ts);
     updateZones(ts);
     for (let i = shots.length - 1; i >= 0; i--) {
@@ -1585,10 +1640,12 @@ function step() {
       s.x = s.x0 + (s.x1 - s.x0) * p; s.y = s.y0 + (s.y1 - s.y0) * p - Math.sin(p * Math.PI) * (ar ? 26 : 60);
       if (!ar) { (s.trail ||= []).push({ x: s.x, y: s.y }); if (s.trail.length > 8) s.trail.shift(); if (Math.random() < 0.5) fx('spark', s.x, s.y, 1, 0, s.col || '#d6b8ff'); }
       if (p >= 1) {
-        if (ar) {
-          if (s.base) dmgBase(1 - s.team, s.dmg); else if (s.tb && !s.tb.g.dead) hitCat(s.tb, s.dmg, s.team ? -1 : 1);
-          fx('spark', s.x1, s.y1, 4, 0, '#fff4c2'); addV('ring', s.x1, s.y1, { life: 10, size: 22, color: '#fff' }); sfx('hit');
-        } else { explode(s.x1, s.y1, s.team, s.dmg, s.rad || 80, 1, true); if (s.fxk) shotStatus(s); }
+        withHS(s.hk, () => {
+          if (ar) {
+            if (s.base) dmgBase(1 - s.team, s.dmg); else if (s.tb && !s.tb.g.dead) hitCat(s.tb, s.dmg, s.team ? -1 : 1);
+            SHAPES.arrow(s.x1, s.y1, s.team ? -1 : 1, false, HS || HF[2]); sfx('hit');
+          } else { explode(s.x1, s.y1, s.team, s.dmg, s.rad || 80, 1, true); if (s.fxk) shotStatus(s); }
+        });
         shots.splice(i, 1);
       }
     }
@@ -1733,6 +1790,23 @@ function render() {
   c.globalAlpha = 1;
   for (const s of shots) {
     if (s.t < 0) continue; if (s.kind === 'arrow') { drawArrow(s); continue; }
+    const sh = (HF[s.hk] || {}).s, fcn = s.x1 >= s.x0 ? 1 : -1, tt = G ? G.fr : 0;
+    if (sh === 'sonic') {   // 비글: 구슬 대신 퍼지는 음파 호
+      for (let i = 0; i < 3; i++) { c.globalAlpha = 1 - i * 0.28; c.beginPath(); c.arc(s.x - fcn * i * 7, s.y, 9 + i * 6, fcn > 0 ? -0.95 : Math.PI - 0.95, fcn > 0 ? 0.95 : Math.PI + 0.95); c.lineWidth = 6 - i; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3.4 - i * 0.6; c.strokeStyle = i ? '#8fd8ff' : '#fff'; c.stroke(); }
+      c.globalAlpha = 1; continue;
+    }
+    if (sh === 'acid') {   // 산성: 일렁이는 초록 방울 + 떨어지는 물방울
+      c.globalAlpha = 0.9; circ(s.x, s.y, 9 + Math.sin(tt * 0.5) * 1.5); fs('#b6ff4d', 2.4); circ(s.x - 2, s.y - 3, 3); c.fillStyle = '#eaffc0'; c.fill();
+      circ(s.x - fcn * 12, s.y + 4 + (tt % 8), 3.4); c.fillStyle = '#7fd62f'; c.fill(); c.globalAlpha = 1; continue;
+    }
+    if (sh === 'poison') {   // 독: 보라·연두 독구름
+      for (let i = 0; i < 5; i++) { const a = tt * 0.12 + i * 1.26; c.globalAlpha = 0.55; circ(s.x + Math.cos(a) * 9, s.y + Math.sin(a) * 6, 9 - (i % 2) * 2); c.fillStyle = i % 2 ? '#b4ff5a' : '#8a3fd0'; c.fill(); }
+      c.globalAlpha = 1; circ(s.x, s.y, 5); fs('#d8a0ff', 2); continue;
+    }
+    if (sh === 'fire') {   // 화염: 불덩이 + 꼬리 불꽃
+      for (let i = 0; i < 5; i++) { const px = s.x - fcn * (8 + i * 9), py = s.y + Math.sin(tt * 0.6 + i) * 3 + i * 1.5; c.globalAlpha = 0.8 - i * 0.14; circ(px, py, 11 - i * 1.6); c.fillStyle = i < 2 ? '#ffb347' : '#ff6a3a'; c.fill(); }
+      c.globalAlpha = 1; circ(s.x, s.y, 12); fs('#ff8a3a', 2.6); circ(s.x, s.y, 6.5); c.fillStyle = '#ffe9a0'; c.fill(); if (tt % 3 === 0) fx('spark', s.x, s.y, 1, -fcn, '#ffd84a'); continue;
+    }
     c.globalAlpha = 0.25; circ(s.x, s.y, 20); c.fillStyle = s.col || '#c9a5ff'; c.fill(); c.globalAlpha = 0.45; circ(s.x, s.y, 14); c.fill(); c.globalAlpha = 1;
     circ(s.x, s.y, 8); fs(s.col || '#b58bff', 2); circ(s.x, s.y, 4.4); c.fillStyle = '#efe0ff'; c.fill();
     const ra = (G ? G.fr : 0) * 0.25; for (let i = 0; i < 3; i++) { const a = ra + i * 2.094; circ(s.x + Math.cos(a) * 12, s.y + Math.sin(a) * 5, 1.6); c.fillStyle = '#fff'; c.fill(); }
